@@ -3,9 +3,19 @@
 Run after using the app so the numbers reflect real runs:
     python3 make_report.py
 """
+import base64
 import json
 from datetime import date
 from pathlib import Path
+
+
+def embed(name: str) -> str:
+    """Inline a screenshot as base64 so report.html stays self-contained."""
+    f = Path(__file__).resolve().parent / "screenshots" / name
+    if not f.exists():
+        return ""
+    b64 = base64.b64encode(f.read_bytes()).decode()
+    return f"data:image/jpeg;base64,{b64}"
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
@@ -286,7 +296,10 @@ niacinamide 10%, retinol 0.5% serum, ceramide moisturizer, SPF 50</code>; wardro
 <p class=cap>Figure 2. Full trace of run <code>efda6726</code>, copied from the live log.
 Note step 5: the model filed sunscreen under "skip" and the invariant check corrected it.</p>
 
-<div class=ph>[ SCREENSHOT 1 — the app showing the 80% → 23.6% gap and the morning brief ]</div>
+<div class=shot><img src="{embed('01-plan.jpg')}" alt="DewPoint showing the humidity gap and morning brief"></div>
+<p class=cap>Figure 2b. A live run on real Open-Meteo data for New Haven, 25 October 2026.
+The outdoor reading is 49%; the computed indoor figure is 35.2%. The brief, the shelf
+sorting and the outfit are all produced from that one number.</p>
 
 <h2>4. Tokenomics</h2>
 
@@ -396,6 +409,11 @@ reaches a model, strips what it matches, and shows the user what it removed.</p>
   <span class=ok>['CeraVe Foaming Facial Cleanser', 'Retinol 0.5% in Squalane']</span></div>
 <p class=cap>Figure 3. Seven injected instructions stripped from a single fake receipt
 while the real line items parse normally. <b>Defence shown working.</b></p>
+
+<div class=shot><img src="{embed('02-injection-blocked.jpg')}" alt="The app showing injected instructions removed from a receipt"></div>
+<p class=cap>Figure 3b. The same defence in the interface. The user is told exactly what was
+removed and why, rather than the block happening silently. The plan on the right is
+unaffected, and the $182 expired-product finding is visible at lower left.</p>
 
 <p>Three layers, not one: the patterns above; <code>&lt;shelf&gt;</code> and
 <code>&lt;wardrobe&gt;</code> delimiters with an explicit system-prompt instruction that

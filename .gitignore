@@ -5,3 +5,4 @@ venv/
 .venv/
 runs/*.jsonl
 .DS_Store
+.claude/
