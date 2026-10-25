@@ -8,9 +8,10 @@
 
 <header class="top">
   <div class="brand"><span class="dot"></span><h1>DewPoint</h1></div>
-  <p class="tagline">Your weather app reports outdoor humidity. Your skin lives in heated
-  indoor air, which is far drier. DewPoint derives the humidity your skin actually sits in
-  from the dew point, then plans your routine and your outfit around that one number.</p>
+  <p class="tagline">Your weather app reports <b>outdoor</b> humidity. Your skin spends the
+  day in heated <b>indoor</b> air, which is far drier — often by thirty points or more.
+  DewPoint derives the humidity your skin actually sits in from the dew point, then plans
+  your routine and your outfit around that one number.</p>
   <div class="envbar">
     <span class="pill">{{ model }}</span>
     {% if key_present %}<span class="pill">key loaded</span>{% else %}<span class="pill warn">no key — degraded mode</span>{% endif %}
@@ -20,7 +21,7 @@
 
 <div class="grid">
   <!-- ------------------------------ input ------------------------------ -->
-  <div>
+  <div class="side-col">
     <div class="card">
       <h2>Today</h2>
       <p class="sub">Where you are, and what you own.</p>
@@ -55,18 +56,21 @@
     </div>
 
     <div class="card" style="margin-top:20px">
-      <h2>Receipt</h2>
-      <p class="sub">Paste an order confirmation. Dates let DewPoint catch oxidised
-      products and out-of-season buys.</p>
+      <h2>Receipt <span class="opt">optional</span></h2>
+      <p class="sub">Paste an order confirmation and DewPoint dates every product, so it can
+      tell you which ones have oxidised and which were bought for another season. Skip it and
+      everything else still works.</p>
       <textarea id="receipt" rows="5" placeholder="Paste your order confirmation email here"></textarea>
-      <button class="go" id="scan" style="margin-top:14px">Add to my shelf</button>
+      <button class="go" id="scan" style="margin-top:14px" disabled>Add to my shelf</button>
       <div id="invbox" style="margin-top:16px"></div>
     </div>
   </div>
 
   <!-- ------------------------------ output ----------------------------- -->
   <div id="out">
-    <div class="card"><div class="empty">Enter a city and press <b>Plan my day</b>.</div></div>
+    <div class="card"><div class="empty">Tell DewPoint where you are.<br>
+    It will work out what the air is really doing,<br>and what that means for your skin
+    and what you wear.<br><br><b>Plan my day</b> &nbsp;→</div></div>
   </div>
 </div>
 
@@ -105,7 +109,12 @@ $('#go').addEventListener('click', async () => {
   btn.disabled = false; btn.textContent = 'Plan my day';
 });
 
-$('#scan').addEventListener('click', async () => {
+const receiptBox = $('#receipt'), scanBtn = $('#scan');
+receiptBox.addEventListener('input', () => {
+  scanBtn.disabled = !receiptBox.value.trim();
+});
+
+scanBtn.addEventListener('click', async () => {
   const btn = $('#scan');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Reading receipt…';
   const r = await fetch('/api/receipt', {
@@ -203,18 +212,38 @@ function gauge(a) {
       <div class="drop" style="left:${lo}%;width:${hi-lo}%"></div>
       ${hi-lo > 3 ? `<div class="drop-lbl" style="left:${(lo+hi)/2}%">${delta} points lost to heating</div>` : ''}
       <div class="mk outdoor" style="left:${outdoor}%">
-        <div class="flag"><div class="v">${a.outdoor_rh}%</div><div class="t">outdoors</div></div>
+        <div class="flag"><div class="v" data-v="${a.outdoor_rh}">0%</div><div class="t">outdoors</div></div>
         <div class="stem"></div>
         <div class="dot"></div>
       </div>
       <div class="mk indoor" style="left:${indoor}%">
-        <div class="flag"><div class="v">${a.indoor_rh}%</div><div class="t">on your skin</div></div>
+        <div class="flag"><div class="v" data-v="${a.indoor_rh}">0%</div><div class="t">on your skin</div></div>
         <div class="dot" style="background:${bandColour(a.band)}"></div>
       </div>
     </div>
     <div class="bandrow">${bandCells}</div>
     <p class="gauge-note"><b>${esc(a.band)}</b> — ${esc(a.band_note)}</p>
   </div>`;
+}
+
+function countUp(el, target, dp) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = target.toFixed(dp) + '%'; return;
+  }
+  const t0 = performance.now(), dur = 950;
+  (function step(now) {
+    const k = Math.min(1, (now - t0) / dur);
+    const eased = 1 - Math.pow(1 - k, 3);
+    el.textContent = (target * eased).toFixed(dp) + '%';
+    if (k < 1) requestAnimationFrame(step);
+  })(t0);
+}
+
+function animateGauge() {
+  const ind = document.querySelector('.mk.indoor .v');
+  const out = document.querySelector('.mk.outdoor .v');
+  if (ind) countUp(ind, parseFloat(ind.dataset.v), 1);
+  if (out) countUp(out, parseFloat(out.dataset.v), 0);
 }
 
 function bandColour(b) {
@@ -247,8 +276,12 @@ function suggestion(gap, ctx) {
 }
 
 function renderInventory(d) {
+  if (d.blocked === 'empty') {
+    $('#invbox').innerHTML = `<p class="muted" style="margin:0">${esc(d.message)}</p>`;
+    return;
+  }
   if (d.blocked) {
-    $('#invbox').innerHTML = `<div class="alert high"><h4>Receipt blocked</h4><p>${esc(d.message)}</p></div>`;
+    $('#invbox').innerHTML = `<div class="alert high"><h4>DewPoint cannot read this receipt</h4><p>${esc(d.message)}</p></div>`;
     return;
   }
   let h = '';
@@ -294,6 +327,8 @@ function render(d) {
     return;
   }
   const a = d.analysis; window._band = a.band;
+  // the page itself takes on the day's condition
+  document.body.className = 'band-' + a.band;
   let h = '';
 
   if (d.safety && d.safety.injection_blocked) {
@@ -312,7 +347,7 @@ function render(d) {
     <div><div class="v">${a.dew_point_c}°</div><div class="k">dew point</div></div>
     <div><div class="v">${a.uv_index}</div><div class="k">uv</div></div>
     <div><div class="v">${a.precip_mm}mm</div><div class="k">rain</div></div>
-    <div><div class="v">${a.wind_kph}</div><div class="k">kph wind</div></div>
+    <div><div class="v">${a.wind_kph}</div><div class="k">wind kph</div></div>
   </div>`;
 
   if (d.brief) h += `<div class="brief rv">${esc(d.brief)}</div>`;
@@ -354,6 +389,7 @@ function render(d) {
     (deterministic engine only, no model). ${esc(d.degraded_reason||'')}</p>`;
 
   $('#out').innerHTML = h;
+  requestAnimationFrame(animateGauge);
 }
 </script>
 </body></html>
