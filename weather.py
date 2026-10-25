@@ -8,6 +8,7 @@ network. Set DEWPOINT_OFFLINE=1 to force fixture mode.
 """
 import json
 import os
+import ssl
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -20,10 +21,29 @@ FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 TIMEOUT = 6
 
 
+def _ssl_context():
+    """Build an SSL context that actually has root certificates.
+
+    The python.org macOS installer ships its own OpenSSL with an empty trust
+    store unless "Install Certificates.command" has been run, so urllib fails
+    HTTPS verification on a machine where curl works fine. certifi is already
+    present as an openai dependency, so we point at its bundle and fall back to
+    the system default elsewhere.
+    """
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
+
+
+SSL_CONTEXT = _ssl_context()
+
+
 def _get(url: str, params: dict) -> dict:
     full = f"{url}?{urllib.parse.urlencode(params)}"
     req = urllib.request.Request(full, headers={"User-Agent": "DewPoint/1.0"})
-    with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+    with urllib.request.urlopen(req, timeout=TIMEOUT, context=SSL_CONTEXT) as resp:
         return json.loads(resp.read().decode())
 
 

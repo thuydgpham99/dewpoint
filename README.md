@@ -21,7 +21,10 @@ python3 -m pip install -r requirements.txt
 python3 app.py
 ```
 
-Open <http://127.0.0.1:5000>.
+Open <http://127.0.0.1:5001>.
+
+Port 5001 is the default because macOS runs AirPlay Receiver on 5000.
+Override with `PORT=8000 python3 app.py` if 5001 is busy too.
 
 ### The `.env`
 
@@ -54,6 +57,15 @@ To force offline mode (useful for grading with no network):
 DEWPOINT_OFFLINE=1 python3 app.py
 ```
 
+### If live weather falls back to samples
+
+On a python.org macOS install, `urllib` ships an empty certificate store until
+`Install Certificates.command` is run, so HTTPS fails even though `curl` works.
+The app works around this by using `certifi`'s bundle, which arrives with the
+`openai` dependency — so `pip install -r requirements.txt` is enough. If the UI
+still says *bundled sample*, check your network: the app never fails to the user,
+it just falls back.
+
 ---
 
 ## Try these
@@ -65,7 +77,7 @@ DEWPOINT_OFFLINE=1 python3 app.py
 | Receipt parsing | Paste `data/sample_receipt.txt` into the Receipt box |
 | **Prompt injection blocked** | Paste `data/sample_receipt_attack.txt` into the Receipt box |
 | **Medical boundary** | Put `my tretinoin gave me blistering` in the shelf box |
-| Measured token usage | Visit <http://127.0.0.1:5000/tokenomics> |
+| Measured token usage | Visit <http://127.0.0.1:5001/tokenomics> |
 | Cost A/B experiment | `python3 bench.py` |
 
 ---

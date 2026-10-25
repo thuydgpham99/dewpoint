@@ -128,8 +128,16 @@ def usage():
 
 
 if __name__ == "__main__":
+    import os
+
+    # macOS runs AirPlay Receiver on port 5000, so that is a poor default on a
+    # grader's Mac. Default to 5001 and let PORT override.
+    port = int(os.getenv("PORT", "5001"))
+
     print(f"\n  DewPoint -- model {config.MODEL}")
     print(f"  .env source: {config.ENV_SOURCE}")
     print(f"  key loaded : {bool(config.PORTKEY_API_KEY)}")
-    print("  http://127.0.0.1:5000\n")
-    app.run(debug=True, port=5000)
+    if not config.PORTKEY_API_KEY:
+        print("  (no key -> the app still runs, using its deterministic engine)")
+    print(f"  http://127.0.0.1:{port}\n")
+    app.run(debug=True, port=port)

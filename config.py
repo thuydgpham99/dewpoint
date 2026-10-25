@@ -12,11 +12,26 @@ REPO_DIR = Path(__file__).resolve().parent
 PARENT_DIR = REPO_DIR.parent
 GRANDPARENT_DIR = PARENT_DIR.parent
 
+# Variables we expect to come from .env. A shell that exports one of these as
+# an EMPTY string would otherwise block python-dotenv from setting it, because
+# load_dotenv(override=False) treats "already present" as "already set". We
+# clear the empty ones first so a real value in .env can land.
+EXPECTED_KEYS = ("PORTKEY_API_KEY", "PORTKEY_BASE_URL", "PORTKEY_MODEL", "OPENAI_API_KEY")
+
+
+def _drop_empty_env_vars() -> None:
+    for name in EXPECTED_KEYS:
+        if name in os.environ and not os.environ[name].strip():
+            del os.environ[name]
+
+
 def load_env() -> str:
     """Load .env from the repo folder first, then one level up.
 
     Returns a short string naming where the key came from, for the UI banner.
     """
+    _drop_empty_env_vars()
+
     # Order required by the assignment: repo folder, then one level above.
     # A third location is checked only as a local convenience and never takes
     # priority over the two the assignment specifies.
