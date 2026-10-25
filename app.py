@@ -8,8 +8,9 @@ from agents import run_pipeline
 from climate import analyse, analysis_to_dict
 from guard import screen_request
 from meter import aggregate, all_runs
-from receipts import (add_items, expiry_report, load_inventory, parse_receipt,
-                      seasonal_mismatch, spend_summary)
+from receipts import (add_items, expiry_report, load_inventory, monthly_spend,
+                      parse_receipt, purchase_context, seasonal_mismatch,
+                      spend_summary)
 from weather import FIXTURES, fetch
 
 app = Flask(__name__)
@@ -48,7 +49,16 @@ def plan():
 
     result = run_pipeline(analysis, screen["safe_shelf"], screen["safe_wardrobe"])
 
+    # Frame any suggestion against what the user already owns and already spent,
+    # so the app never recommends a purchase without that context.
+    inventory = load_inventory()
+    gap_category = (result["shelf"].get("gap_category") or "").strip() or None
+    context = purchase_context(inventory, gap_category)
+    mismatch = seasonal_mismatch(inventory, analysis["band"]) if inventory else {}
+
     return jsonify({
+        "purchase_context": context,
+        "mismatch": mismatch,
         "blocked": None,
         "weather_source": weather.get("source", ""),
         "analysis": analysis,

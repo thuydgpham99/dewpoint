@@ -108,8 +108,13 @@ Sort only the products that appear in the shelf text into tonight's plan.
 Return JSON exactly:
 {{"use":[{{"product":"","when":"AM|PM|both","why":"one short clause"}}],
   "skip":[{{"product":"","why":"one short clause"}}],
-  "gap":"one sentence naming the single most useful thing they do NOT own for these \
-conditions, or empty string if nothing is missing"}}"""
+  "gap":"one sentence naming the single most useful thing for these conditions, \
+or empty string if nothing is missing",
+  "gap_category":"one of: vitamin_c, retinoid, facial_oil, sunscreen, moisturizer, \
+cleanser, exfoliant, other -- or empty string if there is no gap"}}
+
+Name the gap by what the conditions call for. Do not check whether they own it; the
+app does that separately and will tell the user if they already have one."""
     raw = _call(client, meter, "shelf_reader", prompt, max_tokens=2200)
     parsed = _json_or_none(raw) or {"use": [], "skip": [], "gap": "", "_raw": raw}
     return _enforce_invariants(parsed)

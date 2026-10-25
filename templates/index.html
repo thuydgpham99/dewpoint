@@ -26,17 +26,30 @@
       <p class="sub">Where you are, and what you own.</p>
 
       <label for="city">City</label>
+      <p class="hint" style="margin:-3px 0 7px">Any city name pulls live weather. The buttons
+      below load bundled sample days, which work with no internet.</p>
       <input type="text" id="city" value="New Haven" placeholder="New Haven">
       <div class="samples" id="samples">
         {% for s in samples %}<button type="button" data-s="{{ s }}">{{ s }}</button>{% endfor %}
       </div>
 
-      <label for="shelf">Your shelf</label>
-      <textarea id="shelf" rows="4" placeholder="CeraVe foaming cleanser, The Ordinary niacinamide, retinol 0.5%, SPF 50">CeraVe foaming cleanser, The Ordinary niacinamide 10%, retinol 0.5% serum, ceramide moisturizer, SPF 50</textarea>
+      <label>Your shelf</label>
+      <p class="hint" style="margin:-3px 0 7px">The products you actually own. DewPoint only
+      recommends from this list — it never invents a product you don't have.</p>
+      <div class="chips" id="shelfChips">
+        <input type="text" id="shelfInput" placeholder="Type a product, press Enter">
+      </div>
+      <div class="quick" id="shelfQuick"></div>
       <div class="hint">Or paste a receipt below and it fills itself.</div>
 
-      <label for="wardrobe">Your wardrobe</label>
-      <textarea id="wardrobe" rows="3" placeholder="white silk blouse, black wool coat, denim, linen shirt">white silk blouse, black wool coat, grey merino knit, denim, trench coat</textarea>
+      <label>Your wardrobe</label>
+      <p class="hint" style="margin:-3px 0 7px">Clothes you might wear today. Used to build an
+      outfit from what you own — and to catch conflicts, like balm staining silk or sunscreen
+      yellowing white cotton.</p>
+      <div class="chips" id="wardrobeChips">
+        <input type="text" id="wardrobeInput" placeholder="Type a piece, press Enter">
+      </div>
+      <div class="quick" id="wardrobeQuick"></div>
 
       <button class="go" id="go">Plan my day</button>
     </div>
@@ -75,14 +88,19 @@ document.getElementById('samples').addEventListener('click', e => {
 $('#go').addEventListener('click', async () => {
   const btn = $('#go');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Reading the air…';
+  $('#out').innerHTML = '<div class="skel" style="height:210px;margin-bottom:18px"></div>'
+    + '<div class="skel" style="height:74px;margin-bottom:18px"></div>'
+    + '<div class="skel" style="height:150px"></div>';
   try {
     const r = await fetch('/api/plan', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ city:$('#city').value, shelf:$('#shelf').value, wardrobe:$('#wardrobe').value })
+      body: JSON.stringify({ city:$('#city').value,
+                             shelf:CHIPS.shelf.join(', '),
+                             wardrobe:CHIPS.wardrobe.join(', ') })
     });
     render(await r.json());
   } catch (err) {
-    $('#out').innerHTML = `<div class="blocked"><h3>Request failed</h3><p>${err}</p></div>`;
+    $('#out').innerHTML = `<div class="blocked"><h3>Request failed</h3><p>${esc(err)}</p></div>`;
   }
   btn.disabled = false; btn.textContent = 'Plan my day';
 });
@@ -99,6 +117,134 @@ $('#scan').addEventListener('click', async () => {
 });
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+/* ---------------- chip inputs ---------------- */
+const CHIPS = {
+  shelf: ['CeraVe foaming cleanser','The Ordinary niacinamide 10%','retinol 0.5% serum',
+          'ceramide moisturizer','SPF 50'],
+  wardrobe: ['white silk blouse','black wool coat','grey merino knit','denim','trench coat'],
+};
+const SUGGEST = {
+  shelf: ['hyaluronic acid','vitamin C serum','squalane oil','glycolic toner','sheet mask','clay mask'],
+  wardrobe: ['linen shirt','cotton tee','puffer','cashmere scarf','leather boots','silk slip dress'],
+};
+
+function drawChips(which) {
+  const box = document.getElementById(which + 'Chips');
+  const input = document.getElementById(which + 'Input');
+  box.querySelectorAll('.chip').forEach(c => c.remove());
+  CHIPS[which].forEach((val, i) => {
+    const el = document.createElement('span');
+    el.className = 'chip';
+    el.innerHTML = esc(val) + ' <button type="button" aria-label="Remove ' + esc(val) + '">×</button>';
+    el.querySelector('button').onclick = () => { CHIPS[which].splice(i,1); drawChips(which); };
+    box.insertBefore(el, input);
+  });
+  drawQuick(which);
+}
+
+function drawQuick(which) {
+  const q = document.getElementById(which + 'Quick');
+  const left = SUGGEST[which].filter(v => !CHIPS[which].includes(v));
+  q.innerHTML = '';
+  left.slice(0,4).forEach(v => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = '+ ' + v;
+    b.onclick = () => { CHIPS[which].push(v); drawChips(which); };
+    q.appendChild(b);
+  });
+}
+
+['shelf','wardrobe'].forEach(which => {
+  const input = document.getElementById(which + 'Input');
+  const box = document.getElementById(which + 'Chips');
+  input.addEventListener('focus', () => box.classList.add('focus'));
+  input.addEventListener('blur',  () => box.classList.remove('focus'));
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && input.value.trim()) {
+      e.preventDefault();
+      CHIPS[which].push(input.value.trim()); input.value = ''; drawChips(which);
+    } else if (e.key === 'Backspace' && !input.value && CHIPS[which].length) {
+      CHIPS[which].pop(); drawChips(which);
+    }
+  });
+  drawChips(which);
+});
+
+/* ---------------- the gauge ---------------- */
+const BANDS = [
+  {k:'severe',      lo:0,  hi:20,  label:'severe'},
+  {k:'high',        lo:20, hi:30,  label:'high'},
+  {k:'moderate',    lo:30, hi:40,  label:'moderate'},
+  {k:'comfortable', lo:40, hi:60,  label:'comfortable'},
+  {k:'humid',       lo:60, hi:100, label:'humid'},
+];
+
+function gauge(a) {
+  const outdoor = Math.max(0, Math.min(100, a.outdoor_rh));
+  const indoor  = Math.max(0, Math.min(100, a.indoor_rh));
+  const lo = Math.min(outdoor, indoor), hi = Math.max(outdoor, indoor);
+  const delta = Math.abs(outdoor - indoor).toFixed(1);
+
+  const ticks = [20,30,40,60].map(t =>
+    `<div class="tick" style="left:${t}%"></div>`).join('');
+
+  const bandCells = BANDS.map((b,i) =>
+    `<div class="b${i+1} ${b.k===a.band?'on':''}" style="flex:${b.hi-b.lo}">${b.label}</div>`
+  ).join('');
+
+  return `<div class="gauge-wrap band-${a.band} rv">
+    <div class="gauge-head">
+      <h3>The air your skin is in</h3>
+      <span class="loc">${esc(a.location)}</span>
+    </div>
+    <div class="gauge">
+      <div class="tickrow">${ticks}</div>
+      <div class="drop" style="left:${lo}%;width:${hi-lo}%"></div>
+      ${hi-lo > 3 ? `<div class="drop-lbl" style="left:${(lo+hi)/2}%">${delta} points lost to heating</div>` : ''}
+      <div class="mk outdoor" style="left:${outdoor}%">
+        <div class="flag"><div class="v">${a.outdoor_rh}%</div><div class="t">outdoors</div></div>
+        <div class="stem"></div>
+        <div class="dot"></div>
+      </div>
+      <div class="mk indoor" style="left:${indoor}%">
+        <div class="flag"><div class="v">${a.indoor_rh}%</div><div class="t">on your skin</div></div>
+        <div class="dot" style="background:${bandColour(a.band)}"></div>
+      </div>
+    </div>
+    <div class="bandrow">${bandCells}</div>
+    <p class="gauge-note"><b>${esc(a.band)}</b> — ${esc(a.band_note)}</p>
+  </div>`;
+}
+
+function bandColour(b) {
+  return {severe:'#a8431f',high:'#b4551f',moderate:'#8a6a1f',
+          comfortable:'#2f7a52',humid:'#2b6f92'}[b] || '#8a8178';
+}
+
+/* ---------------- spend-aware suggestion ---------------- */
+const VERDICT_TITLE = {
+  use_what_you_have: 'Use what you already own',
+  replace: 'This is a replacement, not a new product',
+  new_purchase: 'This would be a new purchase',
+};
+
+function suggestion(gap, ctx) {
+  if (!ctx || !gap) return '';
+  const rec = ctx.recommendation || 'none';
+  if (rec === 'none') return '';
+  const s = ctx.spend || {};
+  return `<div class="suggest ${rec} rv">
+    <span class="verdict ${rec}">${esc(VERDICT_TITLE[rec] || rec)}</span>
+    <h4>${esc(gap)}</h4>
+    <p>${esc(ctx.message || '')}</p>
+    <div class="spendbar">
+      <div><div class="v">$${(s.this_month_total||0).toFixed(2)}</div><div class="k">spent this month</div></div>
+      <div><div class="v">$${(s.monthly_average||0).toFixed(2)}</div><div class="k">your monthly average</div></div>
+      <div><div class="v ${ctx.expired_value>0?'warn':''}">$${(ctx.expired_value||0).toFixed(2)}</div><div class="k">already owned, expired</div></div>
+    </div>
+  </div>`;
+}
 
 function renderInventory(d) {
   if (d.blocked) {
@@ -135,7 +281,10 @@ function renderInventory(d) {
     });
   }
   $('#invbox').innerHTML = h;
-  if (d.shelf_text) $('#shelf').value = d.shelf_text;
+  if (d.shelf_text) {
+    CHIPS.shelf = d.shelf_text.split(',').map(x=>x.trim()).filter(Boolean);
+    drawChips('shelf');
+  }
 }
 
 function render(d) {
@@ -155,16 +304,9 @@ function render(d) {
       `</div>`;
   }
 
-  h += `<div class="gap">
-    <div class="side outdoor"><div class="num">${a.outdoor_rh}%</div>
-      <div class="lbl">your weather app</div></div>
-    <div class="arrow">→</div>
-    <div class="side band-${a.band}"><div class="num">${a.indoor_rh}%</div>
-      <div class="lbl">what your skin sits in</div></div>
-  </div>
-  <div class="bandline"><b>${a.band}</b> — ${esc(a.band_note)}</div>`;
+  h += gauge(a);
 
-  h += `<div class="metrics">
+  h += `<div class="metrics rv">
     <div><div class="v">${a.temp_c}°</div><div class="k">now</div></div>
     <div><div class="v">${a.temp_min_c}–${a.temp_max_c}°</div><div class="k">range</div></div>
     <div><div class="v">${a.dew_point_c}°</div><div class="k">dew point</div></div>
@@ -173,14 +315,15 @@ function render(d) {
     <div><div class="v">${a.wind_kph}</div><div class="k">kph wind</div></div>
   </div>`;
 
-  if (d.brief) h += `<div class="brief">${esc(d.brief)}</div>`;
+  if (d.brief) h += `<div class="brief rv">${esc(d.brief)}</div>`;
 
-  h += '<div class="cols">';
+  h += suggestion(d.shelf.gap, d.purchase_context);
+
+  h += '<div class="cols rv">';
   h += '<div class="card"><h2>Your shelf tonight</h2><ul class="items">';
   (d.shelf.use||[]).forEach(i=>h+=`<li><span class="n">${esc(i.product)}</span><span class="tag use">${esc(i.when||'use')}</span><span class="w">${esc(i.why)}</span></li>`);
   (d.shelf.skip||[]).forEach(i=>h+=`<li><span class="n">${esc(i.product)}</span><span class="tag skip">skip</span><span class="w">${esc(i.why)}</span></li>`);
   h += '</ul>';
-  if (d.shelf.gap) h += `<p class="muted" style="margin-top:14px"><b>Gap:</b> ${esc(d.shelf.gap)}</p>`;
   h += '</div>';
 
   h += '<div class="card"><h2>What to wear</h2><ul class="items">';

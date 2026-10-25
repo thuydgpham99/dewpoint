@@ -120,3 +120,118 @@ table.tk{width:100%;border-collapse:collapse;font-size:14px;background:var(--car
 table.tk th,table.tk td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left}
 table.tk th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
 table.tk td.num{text-align:right;font-family:ui-monospace,Menlo,monospace}
+
+/* ===================================================================
+   Dryness gauge
+   The core visual: one scale, both humidity readings, so the collapse
+   from outdoor to indoor is visible rather than inferred.
+   Diverging form -- warm (dry) through neutral to cool (humid).
+   Band identity is carried by position and text label, never colour
+   alone. Every band text colour passes WCAG AA on the card surface.
+   =================================================================== */
+.gauge-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:26px 28px 20px;margin-bottom:18px}
+.gauge-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:26px}
+.gauge-head h3{font-family:var(--serif);font-size:17px;margin:0;font-weight:600}
+.gauge-head .loc{font-size:12.5px;color:var(--ink-3)}
+
+.gauge{position:relative;height:16px;border-radius:999px;margin:96px 0 0;
+  background:linear-gradient(90deg,
+    #9d3d1c 0%, #c2672e 20%, #d4a03f 32%, #8fae94 44%,
+    #6f9fb2 62%, #2f6f92 100%)}
+.gauge .tickrow{position:absolute;inset:0;pointer-events:none}
+.gauge .tick{position:absolute;top:-5px;width:1px;height:26px;background:rgba(255,255,255,.55)}
+
+/* markers */
+.mk{position:absolute;top:50%;transform:translate(-50%,-50%);z-index:3}
+.mk .dot{width:20px;height:20px;border-radius:50%;border:3px solid #fff;
+  box-shadow:0 1px 5px rgba(0,0,0,.28)}
+.mk .flag{position:absolute;left:50%;transform:translateX(-50%);bottom:26px;white-space:nowrap;
+  text-align:center}
+.mk .flag .v{font-family:var(--serif);font-size:27px;font-weight:600;line-height:1}
+.mk .flag .t{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);
+  margin-top:3px}
+/* The outdoor reading sits higher than the indoor one, so the two flags can
+   never collide when the values are close -- and the staircase down to the
+   indoor figure mirrors the collapse the chart is about. */
+.mk.outdoor .dot{background:#fff;border-color:var(--ink-3);width:15px;height:15px;border-width:2px}
+.mk.outdoor .flag{bottom:62px}
+.mk.outdoor .flag .v{color:var(--ink-3);font-size:21px}
+.mk.outdoor .stem{position:absolute;left:50%;bottom:12px;width:1px;height:48px;
+  background:var(--line);transform:translateX(-50%)}
+.mk.indoor .flag .v{font-size:36px}
+
+/* the drop between the two readings */
+.drop{position:absolute;top:50%;transform:translateY(-50%);height:4px;
+  background:repeating-linear-gradient(90deg,var(--ink-3) 0 4px,transparent 4px 8px);
+  z-index:2;opacity:.75}
+.drop-lbl{position:absolute;bottom:-30px;transform:translateX(-50%);white-space:nowrap;
+  font-size:11.5px;color:var(--ink-2);font-weight:600}
+
+.bandrow{display:flex;margin-top:34px;font-size:10px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-3);text-align:center}
+.bandrow div{border-top:1px solid var(--line);padding-top:6px}
+.bandrow div.on{color:var(--ink);font-weight:700;border-top-color:currentColor}
+.band-severe .bandrow .b1.on{color:#a8431f}
+.band-high .bandrow .b2.on{color:#b4551f}
+.band-moderate .bandrow .b3.on{color:#8a6a1f}
+.band-comfortable .bandrow .b4.on{color:#2f7a52}
+.band-humid .bandrow .b5.on{color:#2b6f92}
+.gauge-note{margin-top:16px;font-size:14px;color:var(--ink-2);line-height:1.55}
+.gauge-note b{text-transform:capitalize}
+
+/* ---- chips: interactive product entry ---- */
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:9px;border:1px solid var(--line);
+  border-radius:9px;background:#fff;min-height:46px;align-items:flex-start;
+  transition:border-color .15s,box-shadow .15s}
+.chips.focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);
+  color:#8a3c22;border-radius:999px;padding:4px 7px 4px 11px;font-size:13px;
+  animation:pop .18s ease-out}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.chip button{border:0;background:none;cursor:pointer;color:#b5674d;font-size:15px;
+  line-height:1;padding:0 2px;opacity:.65;font-family:inherit}
+.chip button:hover{opacity:1}
+.chips input{border:0;outline:0;flex:1;min-width:120px;font:inherit;font-size:13.5px;
+  padding:5px 4px;background:transparent;color:var(--ink)}
+.quick{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.quick button{background:#fff;border:1px dashed var(--line);border-radius:999px;
+  padding:4px 10px;font-size:12px;cursor:pointer;color:var(--ink-3);font-family:inherit;
+  transition:all .13s}
+.quick button:hover{border-style:solid;border-color:var(--accent);color:var(--accent)}
+
+/* ---- spend-aware suggestion ---- */
+.suggest{border:1px solid var(--line);border-radius:var(--radius);padding:19px 22px;
+  margin-bottom:18px;background:var(--card);border-left:3px solid var(--ink-3)}
+.suggest.use_what_you_have{border-left-color:var(--good);background:#f2f7f3}
+.suggest.replace{border-left-color:var(--mid);background:#fdf8ee}
+.suggest.new_purchase{border-left-color:var(--accent)}
+.suggest h4{margin:0 0 7px;font-family:var(--serif);font-size:16.5px;font-weight:600}
+.suggest p{margin:0 0 11px;font-size:14.5px;color:var(--ink-2);line-height:1.55}
+.verdict{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;padding:3px 9px;border-radius:999px;margin-bottom:9px}
+.verdict.use_what_you_have{background:#e3efe6;color:#2f7a52}
+.verdict.replace{background:#faeed6;color:#8a6a1f}
+.verdict.new_purchase{background:var(--accent-soft);color:#a8431f}
+.spendbar{display:flex;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden;
+  margin-top:13px;background:#fff}
+.spendbar div{flex:1;padding:11px 9px;text-align:center;border-right:1px solid var(--line)}
+.spendbar div:last-child{border-right:0}
+.spendbar .v{font-family:var(--serif);font-size:19px;font-weight:600}
+.spendbar .v.warn{color:var(--dry)}
+.spendbar .k{font-size:10px;letter-spacing:.055em;text-transform:uppercase;
+  color:var(--ink-3);margin-top:3px}
+
+/* ---- reveal animation ---- */
+.rv{animation:rise .42s cubic-bezier(.2,.7,.3,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.rv:nth-child(2){animation-delay:.05s}.rv:nth-child(3){animation-delay:.1s}
+.rv:nth-child(4){animation-delay:.15s}.rv:nth-child(5){animation-delay:.2s}
+.rv:nth-child(6){animation-delay:.25s}.rv:nth-child(7){animation-delay:.3s}
+@media (prefers-reduced-motion:reduce){
+  .rv,.chip{animation:none}
+  .mk,.drop{transition:none !important}
+}
+.skel{background:linear-gradient(90deg,#f0eae2 25%,#f7f3ee 50%,#f0eae2 75%);
+  background-size:200% 100%;animation:sh 1.3s infinite;border-radius:9px}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}

@@ -197,7 +197,37 @@ specific, and never surfaced by either category of app.</li>
 <li><b>It knows how old your products are.</b> Parsing a pasted receipt gives every
 product a purchase date, which turns two invisible problems visible: oxidised actives,
 and products bought for a different season still in daily use.</li>
+<li><b>It will not recommend a purchase without the money attached.</b> Every suggestion
+is checked against what the user already owns and has already spent. See below — this
+turned out to be the most opinionated design decision in the project.</li>
 </ol>
+
+<h3>Recommendations are grounded, not generated</h3>
+<p>An earlier build simply asked the model what the user was missing and printed the
+answer. That is the standard behaviour for this category of app, and it is bad: it
+recommends purchases to someone who may already own the product, with no sense of what
+they have spent. Every recommendation is now routed through
+<code>receipts.purchase_context()</code>, which resolves to one of three verdicts:</p>
+
+<table>
+<tr><th>Verdict</th><th>Condition</th><th>What the user is told</th></tr>
+<tr><td><b>Use what you have</b></td><td>Owns it, still inside its PAO window</td>
+<td>Named product, its age, and an instruction <i>not</i> to buy</td></tr>
+<tr><td><b>Replace</b></td><td>Owns it, past its window</td>
+<td>That the product expired — usually the real reason it "stopped working"</td></tr>
+<tr><td><b>New purchase</b></td><td>Owns nothing in the category</td>
+<td>That this is genuinely new, beside the month's spend</td></tr>
+</table>
+
+<p>Every verdict carries the same three figures: spent this month, the tracked monthly
+average, and the value already owned that has expired. The model proposes a
+<i>category</i>; the deterministic layer decides whether buying anything is warranted.
+This is the same separation as §3 — the model is never the thing that decides.</p>
+
+<div class=shot><img src="{embed('03-spend-aware.jpg')}" alt="A recommendation showing the use-what-you-own verdict with spend context"></div>
+<p class=cap>Figure 1b. The app declining to recommend a purchase. The user asked for a
+plan; the honest answer was that they already own something that covers it. $182 of
+expired product is shown alongside, because that is the money actually at stake.</p>
 
 <p><b>Why it matters.</b> The advice changes. At 23.6% indoor humidity the correct action
 is to pause retinoids and acids and seal the barrier. The user's instinct — and the

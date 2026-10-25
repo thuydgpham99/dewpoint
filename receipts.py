@@ -234,3 +234,158 @@ def spend_summary(inventory: list, expiries: list) -> dict:
         "expired_value": round(wasted, 2),
         "expired_count": sum(1 for e in expiries if e["status"] == "expired"),
     }
+
+
+# ---------------------------------------------------------------------------
+# Spend context.
+#
+# A recommendation to buy something is only responsible if it arrives with the
+# money already spent. These functions answer three questions before any
+# suggestion is shown:
+#
+#   1. What has this person already spent, this month and on average?
+#   2. Do they already own something that covers this need?
+#   3. If they do, is the real problem that it is expired or out of season --
+#      in which case the answer is "use what you have", not "buy".
+# ---------------------------------------------------------------------------
+CATEGORY_LABELS = {
+    "vitamin_c": "vitamin C serum",
+    "retinoid": "retinoid",
+    "facial_oil": "facial oil",
+    "sunscreen": "sunscreen",
+    "moisturizer": "moisturiser",
+    "cleanser": "cleanser",
+    "exfoliant": "exfoliant",
+    "other": "product",
+}
+
+
+def monthly_spend(inventory: list, today: date = None) -> dict:
+    """Spend grouped by calendar month, plus this month and a running average."""
+    today = today or date.today()
+    buckets = {}
+    for item in inventory:
+        price = item.get("price")
+        if not price:
+            continue
+        try:
+            when = datetime.fromisoformat(item["purchased"]).date()
+        except ValueError:
+            continue
+        key = f"{when.year}-{when.month:02d}"
+        buckets.setdefault(key, {"total": 0.0, "count": 0})
+        buckets[key]["total"] += price
+        buckets[key]["count"] += 1
+
+    this_key = f"{today.year}-{today.month:02d}"
+    this_month = buckets.get(this_key, {"total": 0.0, "count": 0})
+
+    months = sorted(buckets.keys())
+    avg = (sum(b["total"] for b in buckets.values()) / len(buckets)) if buckets else 0.0
+
+    series = [{"month": m, "total": round(buckets[m]["total"], 2),
+               "count": buckets[m]["count"]} for m in months]
+
+    return {
+        "this_month_total": round(this_month["total"], 2),
+        "this_month_count": this_month["count"],
+        "monthly_average": round(avg, 2),
+        "months_tracked": len(buckets),
+        "series": series,
+        "all_time": round(sum(b["total"] for b in buckets.values()), 2),
+    }
+
+
+def already_owned(inventory: list, category: str, today: date = None) -> dict:
+    """Does the user already own something in this category, and is it usable?
+
+    Returns the best candidate plus why it may not be working, so the app can
+    say "use the one you have" instead of "buy another".
+    """
+    candidates = [i for i in inventory if i.get("category") == category]
+    if not candidates:
+        return {"owns": False}
+
+    scored = []
+    for item in candidates:
+        age = months_between(item["purchased"], today)
+        limit, note = PAO_MONTHS.get(category, PAO_MONTHS["other"])
+        scored.append({
+            "name": item["name"],
+            "price": item.get("price"),
+            "age_months": round(age, 1),
+            "limit_months": limit,
+            "expired": age >= limit,
+            "note": note,
+        })
+
+    scored.sort(key=lambda s: s["age_months"])
+    freshest = scored[0]
+    return {
+        "owns": True,
+        "count": len(scored),
+        "freshest": freshest,
+        "all_expired": all(s["expired"] for s in scored),
+        "items": scored,
+    }
+
+
+def purchase_context(inventory: list, gap_category: str = None,
+                     today: date = None) -> dict:
+    """Everything the UI needs to frame a suggestion responsibly."""
+    today = today or date.today()
+    spend = monthly_spend(inventory, today)
+    expiries = expiry_report(inventory, today)
+    expired_value = sum(e["price"] for e in expiries
+                        if e["status"] == "expired" and e.get("price"))
+
+    ctx = {
+        "spend": spend,
+        "expired_value": round(expired_value, 2),
+        "expired_count": sum(1 for e in expiries if e["status"] == "expired"),
+        "recommendation": "none",
+        "message": "",
+        "category": gap_category,
+        "category_label": CATEGORY_LABELS.get(gap_category or "", "product"),
+    }
+
+    if not gap_category:
+        return ctx
+
+    owned = already_owned(inventory, gap_category, today)
+    ctx["owned"] = owned
+    label = ctx["category_label"]
+
+    if owned.get("owns") and not owned["all_expired"]:
+        f = owned["freshest"]
+        ctx["recommendation"] = "use_what_you_have"
+        ctx["message"] = (
+            f"You already own a {label} — {f['name']}, bought "
+            f"{f['age_months']} months ago and still inside its "
+            f"{f['limit_months']}-month window. Use that before buying another."
+        )
+    elif owned.get("owns") and owned["all_expired"]:
+        f = owned["freshest"]
+        ctx["recommendation"] = "replace"
+        ctx["message"] = (
+            f"You own a {label} — {f['name']} — but at {f['age_months']} months it is "
+            f"past its {f['limit_months']}-month window, which is likely why it stopped "
+            f"working. This is a replacement, not a new category."
+        )
+    else:
+        ctx["recommendation"] = "new_purchase"
+        ctx["message"] = (
+            f"You do not own a {label}. This would be a new purchase."
+        )
+
+    if spend["this_month_total"] > 0:
+        ctx["message"] += (
+            f" For context: ${spend['this_month_total']:.2f} spent this month across "
+            f"{spend['this_month_count']} item(s); your tracked average is "
+            f"${spend['monthly_average']:.2f}/month."
+        )
+    if expired_value > 0:
+        ctx["message"] += (
+            f" ${expired_value:.2f} of what you already own is past its window."
+        )
+    return ctx
