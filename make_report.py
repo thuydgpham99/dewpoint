@@ -1,0 +1,528 @@
+"""Generate report.html from measured data in runs/*.
+
+Run after using the app so the numbers reflect real runs:
+    python3 make_report.py
+"""
+import json
+from datetime import date
+from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from meter import PRICING, all_runs
+
+HERE = Path(__file__).resolve().parent
+RUNS = all_runs()
+BENCH = json.loads((HERE / "runs/bench.json").read_text()) if (HERE / "runs/bench.json").exists() else None
+
+n = len(RUNS) or 1
+avg = {
+    "input": sum(r["input_tokens"] for r in RUNS) / n,
+    "cached": sum(r["cached_input_tokens"] for r in RUNS) / n,
+    "output": sum(r["output_tokens"] for r in RUNS) / n,
+    "reasoning": sum(r.get("reasoning_tokens", 0) for r in RUNS) / n,
+    "cost": sum(r["cost_usd"] for r in RUNS) / n,
+}
+avg["total"] = avg["input"] + avg["cached"] + avg["output"]
+reason_pct = (avg["reasoning"] / avg["output"] * 100) if avg["output"] else 0
+RUNS_PER_USER_MONTH = 20
+rates = PRICING["gpt-6-luna"]
+
+def fmt(x, d=0): return f"{x:,.{d}f}"
+
+run_rows = "".join(
+    f"<tr><td>{r['run_id']}</td><td>{r['agent_calls']}</td>"
+    f"<td class=n>{fmt(r['input_tokens'])}</td><td class=n>{fmt(r['cached_input_tokens'])}</td>"
+    f"<td class=n>{fmt(r['output_tokens'])}</td><td class=n>{fmt(r.get('reasoning_tokens',0))}</td>"
+    f"<td class=n>${r['cost_usd']:.5f}</td><td class=n>{r['seconds']}</td></tr>"
+    for r in RUNS[-12:])
+
+bench_rows = ""
+if BENCH:
+    bench_rows = "".join(
+        f"<tr><td>{b['city']}</td>"
+        f"<td class=n>{fmt(b['three_in'])}/{fmt(b['three_out'])}</td>"
+        f"<td class=n>${b['three_cost']:.5f}</td>"
+        f"<td class=n>{fmt(b['one_in'])}/{fmt(b['one_out'])}</td>"
+        f"<td class=n>${b['one_cost']:.5f}</td>"
+        f"<td class=n>{(1-b['one_cost']/b['three_cost'])*100:.0f}%</td></tr>"
+        for b in BENCH["rows"])
+    bench_saving = (1 - BENCH["avg_one_cost"] / BENCH["avg_three_cost"]) * 100
+else:
+    bench_saving = 0
+
+CSS = """
+*{box-sizing:border-box}
+body{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:11.5pt;line-height:1.62;
+ color:#1d1a17;background:#faf7f3;margin:0;padding:0}
+.page{max-width:7.3in;margin:0 auto;padding:0.55in 0.6in 0.7in;background:#fff;
+ box-shadow:0 0 22px rgba(0,0,0,.05)}
+h1{font-size:30pt;margin:0 0 4px;letter-spacing:-.8px;line-height:1.1}
+.sub{font-size:13pt;color:#6b635a;margin:0 0 20px;font-style:italic}
+h2{font-size:15pt;margin:30px 0 9px;padding-bottom:5px;border-bottom:1.5px solid #b5674d;
+ letter-spacing:-.2px}
+h3{font-size:12pt;margin:20px 0 6px;color:#3a352f}
+p{margin:0 0 11px}
+.meta{font-family:ui-sans-serif,-apple-system,"Segoe UI",sans-serif;font-size:9.5pt;
+ color:#6b635a;background:#faf7f3;border:1px solid #e8e1d8;border-radius:8px;
+ padding:13px 16px;margin-bottom:22px}
+.meta a{color:#b5674d}
+.lede{font-size:12.5pt;border-left:3px solid #b5674d;padding-left:16px;color:#3a352f;margin:18px 0}
+table{width:100%;border-collapse:collapse;margin:13px 0;font-size:9.5pt;
+ font-family:ui-sans-serif,-apple-system,sans-serif}
+th,td{padding:6px 9px;border-bottom:1px solid #e8e1d8;text-align:left;vertical-align:top}
+th{background:#faf7f3;font-size:8.5pt;text-transform:uppercase;letter-spacing:.05em;color:#6b635a}
+td.n{text-align:right;font-family:ui-monospace,Menlo,monospace}
+.ev{background:#1d1a17;color:#e8e1d8;border-radius:8px;padding:14px 17px;margin:13px 0;
+ font-family:ui-monospace,Menlo,monospace;font-size:8.5pt;line-height:1.5;white-space:pre-wrap;
+ overflow-wrap:anywhere}
+.ev .ok{color:#8fd4a0}.ev .bad{color:#f0a08a}.ev .dim{color:#8a8178}
+.cap{font-family:ui-sans-serif,sans-serif;font-size:8.5pt;color:#6b635a;margin:-7px 0 16px;
+ font-style:italic}
+.box{background:#faf7f3;border:1px solid #e8e1d8;border-radius:9px;padding:14px 17px;margin:14px 0}
+.box.warn{background:#fdf4f1;border-color:#efcfc4}
+.box h4{margin:0 0 6px;font-size:11pt}
+.gap{display:flex;align-items:center;justify-content:center;gap:22px;margin:18px 0;
+ padding:20px;background:#faf7f3;border:1px solid #e8e1d8;border-radius:10px}
+.gap .n2{font-size:34pt;font-weight:600;line-height:1}
+.gap .l{font-size:8.5pt;text-transform:uppercase;letter-spacing:.06em;color:#6b635a;
+ text-align:center;margin-top:5px;font-family:ui-sans-serif,sans-serif}
+.gap .dry{color:#c4603f}.gap .out{color:#8a8178}.gap .ar{font-size:20pt;color:#8a8178}
+.shot{border:1px solid #e8e1d8;border-radius:9px;padding:0;margin:14px 0;overflow:hidden}
+.shot img{width:100%;display:block}
+.ph{background:#faf7f3;border:2px dashed #d8cfc4;border-radius:9px;padding:26px 20px;
+ text-align:center;color:#8a8178;font-family:ui-sans-serif,sans-serif;font-size:9.5pt;margin:14px 0}
+ul,ol{margin:0 0 11px;padding-left:20px}li{margin-bottom:5px}
+.two{display:flex;gap:18px}.two>div{flex:1}
+code{background:#f3ede6;padding:1px 5px;border-radius:3px;font-size:9pt;
+ font-family:ui-monospace,Menlo,monospace}
+.ft{margin-top:34px;padding-top:13px;border-top:1px solid #e8e1d8;font-size:9pt;color:#8a8178;
+ font-family:ui-sans-serif,sans-serif}
+@media print{body{background:#fff}.page{box-shadow:none;max-width:100%;padding:0.4in}
+ h2{page-break-after:avoid}table,.ev,.box{page-break-inside:avoid}}
+"""
+
+HTML = f"""<!doctype html><html lang=en><head><meta charset=utf-8>
+<title>DewPoint — Final Project Report</title><style>{CSS}</style></head><body><div class=page>
+
+<h1>DewPoint</h1>
+<p class=sub>Skincare and outfit, planned around the air you are actually in.</p>
+
+<div class=meta>
+<b>Author:</b> Jennifer Pham &nbsp;·&nbsp; <b>Course:</b> MGT 409 &nbsp;·&nbsp;
+<b>Date:</b> {date.today():%d %B %Y}<br>
+<b>Repository:</b> <a href="REPO_URL_HERE">REPO_URL_HERE</a><br>
+<b>Model:</b> gpt-5.6-luna via Portkey &nbsp;·&nbsp;
+<b>Runs measured for this report:</b> {len(RUNS)}<br><br>
+DewPoint derives the relative humidity your skin actually sits in — indoor air, not the
+outdoor figure your weather app reports — and uses that one number to plan both your
+skincare routine and what you wear.
+</div>
+
+<p class=lede>Your weather app says it is 80% humidity today. Your skin is sitting in
+23.6%. Both numbers are correct, and almost nobody knows the second one exists.</p>
+
+<h2>1. Motivation</h2>
+
+<p><b>Who has the problem.</b> Anyone who follows a skincare routine and notices it stops
+working at certain times of year. The reference user for this project is a graduate
+student in New Haven who owns eleven skincare products, follows a fixed routine, and
+cannot explain why her skin is tight and flaking in February when her weather app shows
+humidity in the seventies.</p>
+
+<p><b>How they handle it today.</b> Three ways, all poor. They push through and assume the
+products stopped working. They buy something new — the average respondent in a 2023
+Statista survey of US consumers reported spending roughly $30 per month on skincare, and
+seasonal re-buying is a large share of that. Or they ask social media, where the answer is
+a product recommendation rather than a diagnosis.</p>
+
+<p><b>What it costs them.</b> Money spent replacing products that were never the problem,
+plus a genuine barrier-damage cycle: dry air causes flaking, flaking is mistaken for
+congestion, the user exfoliates, the barrier degrades further. The cost is both financial
+and dermatological.</p>
+
+<p><b>The thing nobody is told.</b> Relative humidity is relative to temperature. Cold air
+holds very little water even at high relative humidity. When that air is drawn into a
+heated building and warmed to room temperature, its capacity rises sharply while its
+actual water content does not — so its relative humidity collapses. This is why skin
+cracks in winter while the forecast reads "humid," and it is a straightforward
+psychrometric calculation that no consumer skincare or weather product performs.</p>
+
+<div class=gap>
+<div><div class="n2 out">80%</div><div class=l>what your weather app reports</div></div>
+<div class=ar>→</div>
+<div><div class="n2 dry">23.6%</div><div class=l>what your skin is in, computed</div></div>
+</div>
+<p class=cap>New Haven, 2 °C air at a −1 °C dew point, heated to 20.5 °C indoors.
+Computed by <code>climate.py</code>, not estimated.</p>
+
+<h2>2. What is new</h2>
+
+<p><b>Existing alternatives.</b> Weather apps report outdoor relative humidity and stop
+there. Skincare apps (Skin Bliss, TroveSkin, YUTY) build routines from a skin-type quiz
+and treat weather as static. A handful of brand tools mention "climate" but use outdoor
+humidity directly. Outfit recommenders are abundant and all key on temperature and
+precipitation. Nothing joins the two.</p>
+
+<p><b>What DewPoint does differently.</b> Three things, in order of how new they are:</p>
+
+<ol>
+<li><b>It computes indoor humidity from the dew point.</b> This is the core claim.
+Outdoor relative humidity is close to useless as a predictor of transepidermal water
+loss; the humidity of heated indoor air is the number that matters, and it is derivable
+from data every weather API already publishes. I could not find a consumer product that
+does this.</li>
+<li><b>It treats skincare and clothing as one coupled problem.</b> The product on your
+face determines what fabric should touch it. Occlusive balm permanently stains silk.
+Chemical sunscreen filters yellow white cotton. Mineral sunscreen leaves a cast on dark
+collars. Cold wind plus wool abrades a barrier already stripped. These are real,
+specific, and never surfaced by either category of app.</li>
+<li><b>It knows how old your products are.</b> Parsing a pasted receipt gives every
+product a purchase date, which turns two invisible problems visible: oxidised actives,
+and products bought for a different season still in daily use.</li>
+</ol>
+
+<p><b>Why it matters.</b> The advice changes. At 23.6% indoor humidity the correct action
+is to pause retinoids and acids and seal the barrier. The user's instinct — and the
+recommendation she would get from a product quiz — is to exfoliate the flaking. DewPoint
+tells her the opposite, and explains why in terms of a number she can check.</p>
+
+<h2>3. The agents</h2>
+
+<h3>Organisation</h3>
+<p>Three agents run in sequence behind a deterministic engine. The handoff is strictly
+one-directional; no agent calls another.</p>
+
+<div class=ev><span class=dim>city ─▶</span> weather.py        <span class=dim>Open-Meteo, no API key, offline fallback</span>
+            <span class=dim>│</span>
+            <span class=dim>▼</span>
+        climate.py        <span class=dim>psychrometrics ─ every number computed here</span>
+            <span class=dim>│  indoor_rh, band, fabric rules, cross-domain alerts</span>
+            <span class=dim>▼</span>
+        guard.py          <span class=dim>injection screen · medical boundary · length cap</span>
+            <span class=dim>│</span>
+   ┌────────┴────────┐
+   <span class=dim>▼</span>                 <span class=dim>▼</span>
+<span class=ok>Agent 1</span>           <span class=ok>Agent 2</span>
+Shelf Reader      Stylist
+<span class=dim>use / skip / gap</span>  <span class=dim>outfit / swing / avoid</span>
+   <span class=dim>│</span>                 <span class=dim>│</span>
+   └────────┬────────┘
+            <span class=dim>▼</span>
+        <span class=ok>Agent 3</span>  Briefer
+        <span class=dim>three-paragraph morning brief</span>
+            <span class=dim>│</span>
+            <span class=dim>▼</span>
+     _enforce_invariants()   <span class=dim>sunscreen is never skipped</span></div>
+<p class=cap>Figure 1. Pipeline. The two shaded boxes are independent and could run in
+parallel; they are sequential here only to keep the measured token accounting simple.</p>
+
+<h3>Roles and tools</h3>
+<table>
+<tr><th>Agent</th><th>Role</th><th>Tools / inputs</th><th>Output</th></tr>
+<tr><td><b>Shelf Reader</b></td><td>Sorts the products the user owns into tonight's plan</td>
+<td>Pre-computed dryness band and rules from <code>climate.py</code>; sanitised shelf text</td>
+<td>JSON: use / skip / gap</td></tr>
+<tr><td><b>Stylist</b></td><td>Builds one outfit for the day's range</td>
+<td>Fabric rules, temperature swing, precipitation, UV; sanitised wardrobe text</td>
+<td>JSON: outfit / swing plan / avoid</td></tr>
+<tr><td><b>Briefer</b></td><td>Writes the morning brief and surfaces the single most
+important skin-to-clothing conflict</td>
+<td>Outputs of agents 1 and 2, plus the cross-domain alerts</td>
+<td>Prose, under 140 words</td></tr>
+</table>
+
+<h3>The central design decision: no agent does arithmetic</h3>
+<p>Every number in DewPoint — indoor humidity, the dryness band, expiry windows, fabric
+thresholds — is computed in Python before any model is called. The agents receive those
+figures as given and are instructed never to recalculate. This is deliberate. The most
+common and most damaging failure mode for an LLM in an advisory product is a confident,
+wrong number, and prompting is a weak defence against it. Removing the arithmetic from
+the model's job removes the failure mode by construction.</p>
+
+<h3>Model choice</h3>
+<p>All three agents run <b>gpt-5.6-luna</b>, the model available on the course key. Having
+measured it, the choice is defensible on its own terms for agents 1 and 2 — both emit
+small, strictly-shaped JSON where reliability matters more than fluency — but it is a
+poor fit for agent 3, and the measurements in §4 show why: the model spends
+<b>{reason_pct:.0f}% of its output budget on hidden reasoning tokens</b>, which is
+expensive for a task that is essentially rewriting. If a cheaper non-reasoning model were
+available on the course key, the Briefer is the call I would move first.</p>
+
+<h3>One real run, traced</h3>
+<p>Input: city <code>New Haven winter</code>; shelf <code>CeraVe foaming cleanser,
+niacinamide 10%, retinol 0.5% serum, ceramide moisturizer, SPF 50</code>; wardrobe
+<code>white silk blouse, black wool coat, grey merino knit, denim, trench coat</code>.</p>
+
+<div class=ev><span class=dim>STEP 1  weather.py</span>
+  temp 2.0C  dew_point -1.0C  outdoor_rh 80%  wind 28kph  uv 2.0
+
+<span class=dim>STEP 2  climate.py  (no model involved)</span>
+  e  = 6.112 · exp(17.67·−1.0 / (−1.0+243.5))      = 5.62 hPa
+  es = 6.112 · exp(17.67·20.5 / (20.5+243.5))      = 24.11 hPa
+  <span class=ok>indoor_rh = 5.62 / 24.11 = 23.6%  →  band "high"</span>
+  alerts: ["Balm and collars", "Windburn"]
+
+<span class=dim>STEP 3  guard.py</span>
+  injection findings: 0    medical: no    truncated: no
+
+<span class=dim>STEP 4  Agent 1 Shelf Reader</span>      <span class=dim>555 in / 423 out (291 reasoning)</span>
+  use : ceramide moisturizer (PM)
+  skip: CeraVe foaming cleanser, niacinamide 10%, retinol 0.5% serum, <span class=bad>SPF 50</span>
+  gap : "Hyaluronic acid to apply on damp skin"
+
+<span class=dim>STEP 5  _enforce_invariants()</span>
+  <span class=ok>SPF 50 moved out of skip → use (AM)</span>   <span class=dim># model error, caught deterministically</span>
+
+<span class=dim>STEP 6  Agent 2 Stylist</span>            <span class=dim>449 in / 191 out (81 reasoning)</span>
+  outfit: grey merino knit, black wool coat, white silk blouse
+  avoid : denim as a base layer
+
+<span class=dim>STEP 7  Agent 3 Briefer</span>            <span class=dim>654 in / 509 out (333 reasoning)</span>
+  "...The main conflict is the silk blouse: balm on your face and neck can
+   permanently darken silk, so keep the collar clear or choose cotton."
+
+<span class=dim>TOTAL</span>  3 calls · 1,658 in · 1,123 out · <span class=ok>$0.00092</span> · 9.4 s</div>
+<p class=cap>Figure 2. Full trace of run <code>efda6726</code>, copied from the live log.
+Note step 5: the model filed sunscreen under "skip" and the invariant check corrected it.</p>
+
+<div class=ph>[ SCREENSHOT 1 — the app showing the 80% → 23.6% gap and the morning brief ]</div>
+
+<h2>4. Tokenomics</h2>
+
+<p>Every figure in this section is read from the provider's own <code>usage</code> field
+and logged to <code>runs/usage.jsonl</code> by <code>meter.py</code>. Nothing is estimated.
+Measured across <b>{len(RUNS)} runs</b>.</p>
+
+<table>
+<tr><th>Measure</th><th>Per run (mean)</th></tr>
+<tr><td>Input tokens</td><td class=n>{fmt(avg['input'])}</td></tr>
+<tr><td>Cached input tokens</td><td class=n>{fmt(avg['cached'])}</td></tr>
+<tr><td>Output tokens (visible + reasoning)</td><td class=n>{fmt(avg['output'])}</td></tr>
+<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>{fmt(avg['reasoning'])} ({reason_pct:.0f}%)</td></tr>
+<tr><td><b>Total tokens</b></td><td class=n><b>{fmt(avg['total'])}</b></td></tr>
+<tr><td><b>Cost per run</b></td><td class=n><b>${avg['cost']:.5f}</b></td></tr>
+</table>
+
+<h3>The finding that matters</h3>
+<div class="box warn"><h4>{reason_pct:.0f}% of output tokens are never shown to the user</h4>
+<p style="margin:0">This model reasons before answering, and reasoning tokens bill at the
+output rate. On a typical run {fmt(avg['reasoning'])} of {fmt(avg['output'])} output tokens
+were internal. The visible answer — the part the user reads — is roughly a third of what
+is paid for. Any cost model built on visible output length would understate the bill by
+about 3×.</p></div>
+
+<h3>Cost at scale</h3>
+<p>Assumption, stated plainly: a user opens DewPoint on mornings when conditions shift
+meaningfully, modelled at <b>{RUNS_PER_USER_MONTH} runs per user per month</b>. Rates used:
+${rates['input']}/1M input, ${rates['cached_input']}/1M cached, ${rates['output']}/1M output.</p>
+
+<table>
+<tr><th>Scale</th><th>Runs / month</th><th>Cost / month</th><th>Cost / year</th></tr>
+<tr><td>One user</td><td class=n>{RUNS_PER_USER_MONTH}</td>
+<td class=n>${avg['cost']*RUNS_PER_USER_MONTH:.4f}</td>
+<td class=n>${avg['cost']*RUNS_PER_USER_MONTH*12:.2f}</td></tr>
+<tr><td>100 users</td><td class=n>{fmt(100*RUNS_PER_USER_MONTH)}</td>
+<td class=n>${avg['cost']*RUNS_PER_USER_MONTH*100:.2f}</td>
+<td class=n>${avg['cost']*RUNS_PER_USER_MONTH*100*12:.2f}</td></tr>
+<tr><td>10,000 users</td><td class=n>{fmt(10000*RUNS_PER_USER_MONTH)}</td>
+<td class=n>${avg['cost']*RUNS_PER_USER_MONTH*10000:.2f}</td>
+<td class=n>${avg['cost']*RUNS_PER_USER_MONTH*10000*12:,.2f}</td></tr>
+</table>
+
+<p>At 10,000 users the model bill is roughly
+<b>${avg['cost']*RUNS_PER_USER_MONTH*10000*12:,.0f} per year</b> — about
+<b>${avg['cost']*RUNS_PER_USER_MONTH*12:.2f} per user per year</b>. Weather costs nothing
+(Open-Meteo, no key). The deterministic engine costs nothing. Inference is effectively
+the entire marginal cost of the product.</p>
+
+<h3>Cost-cutting, measured</h3>
+<p>I tested the obvious lever: collapsing the three agents into one merged call producing
+the same three outputs. <code>bench.py</code> runs both across three climates.</p>
+
+<table>
+<tr><th>Climate</th><th>3-agent in/out</th><th>3-agent cost</th><th>1-call in/out</th>
+<th>1-call cost</th><th>Saving</th></tr>
+{bench_rows}
+</table>
+
+<p><b>Result: {bench_saving:.0f}% cheaper.</b> The saving comes from the system prefix being
+sent once instead of three times, and from one reasoning pass instead of three.</p>
+
+<p><b>The tradeoff, honestly.</b> The merged call returned valid JSON on 3 of 3 attempts
+here, which is not enough evidence to call it safe — a single malformed response loses the
+entire run rather than one third of it, and the three-agent version degrades gracefully
+because each agent's output is validated independently. I have kept the three-agent
+pipeline as the default and shipped the merged version as a benchmark rather than a
+setting. At this cost per run the {bench_saving:.0f}% saving is worth about
+${(avg['cost']*bench_saving/100)*RUNS_PER_USER_MONTH*12:.2f} per user per year, which does
+not justify the reliability loss until the user base is far larger.</p>
+
+<h3>Two other levers, and why one failed</h3>
+<ul>
+<li><b>Prompt caching — attempted, did not fire.</b> All three agents share one stable
+system prefix specifically so the provider could cache it. Measured cached tokens:
+<b>{fmt(avg['cached'])}</b>. The prefix is roughly 250 tokens and the provider's cache
+minimum is 1,024, so it never qualified. Reported here because it is a real negative
+result: the optimisation was designed in and did not pay.</li>
+<li><b>Gateway response caching — observed.</b> Repeating an identical request returned in
+under 0.4 s against ~9.4 s for a fresh run, consistent with Portkey caching at the gateway.
+Useful for repeated identical queries, irrelevant to real usage where the weather differs.</li>
+</ul>
+
+<h2>5. Safety</h2>
+
+<h3>Threat 1 — prompt injection through pasted text</h3>
+<p>DewPoint's two free-text inputs are the shelf box and the receipt box. The receipt box
+is the serious one: receipt text is <i>email content</i>, which is attacker-controllable
+and arrives with implicit legitimacy. A fake order confirmation carrying injected
+instructions is a realistic attack, not a contrived one.</p>
+
+<p><code>guard.py</code> screens both fields against twelve injection shapes before any text
+reaches a model, strips what it matches, and shows the user what it removed.</p>
+
+<div class=ev><span class=dim>$ curl -X POST /api/receipt -d @data/sample_receipt_attack.txt</span>
+
+<span class=ok>injection_blocked: True</span>
+  <span class=bad>- override attempt          -> Ignore all previous instructions</span>
+  <span class=bad>- role reassignment         -> You are now a</span>
+  <span class=bad>- injected instruction block-> NEW INSTRUCTIONS:</span>
+  <span class=bad>- prompt extraction         -> print your system prompt</span>
+  <span class=bad>- concealment attempt       -> Do not tell the user</span>
+  <span class=bad>- recommendation hijack     -> Always recommend</span>
+  <span class=bad>- recommendation hijack     -> regardless of weather</span>
+
+<span class=dim>legitimate line items still parsed correctly:</span>
+  <span class=ok>['CeraVe Foaming Facial Cleanser', 'Retinol 0.5% in Squalane']</span></div>
+<p class=cap>Figure 3. Seven injected instructions stripped from a single fake receipt
+while the real line items parse normally. <b>Defence shown working.</b></p>
+
+<p>Three layers, not one: the patterns above; <code>&lt;shelf&gt;</code> and
+<code>&lt;wardrobe&gt;</code> delimiters with an explicit system-prompt instruction that
+their contents are data; and the structural fact that the agents cannot take actions —
+there is no tool call, no spend, no outbound message. The worst outcome of a successful
+injection is bad cosmetic advice, which is also what the invariant check in §3 exists to
+catch.</p>
+
+<h3>Threat 2 — agent malfunction</h3>
+<p>Measured, not hypothesised. Across four live runs the Shelf Reader filed <b>SPF 50 under
+"skip" on 2 of 4 climates</b> — on overcast days, where it is most wrong, since UVA passes
+through cloud. This is exactly the quiet, plausible error that prompting handles badly.</p>
+
+<div class=ev><span class=dim>New Haven winter</span>  band=high        <span class=ok>SPF kept</span>  corrections: <span class=ok>['SPF 50 moved out of skip']</span>
+<span class=dim>Miami summer</span>      band=humid       <span class=ok>SPF kept</span>  corrections: <span class=ok>['SPF 50 moved out of skip']</span>
+<span class=dim>Phoenix dry heat</span>  band=moderate    <span class=ok>SPF kept</span>  corrections: []
+<span class=dim>London damp</span>       band=comfortable <span class=ok>SPF kept</span>  corrections: []</div>
+<p class=cap>Figure 4. The invariant check firing twice. <b>Second defence shown working.</b></p>
+
+<p>Other malfunction controls: invented facts are limited by giving the agents no
+arithmetic and no product catalogue — they may only sort products the user actually listed;
+infinite loops are impossible because the pipeline is a fixed three-step chain with no
+agent-to-agent calls and a hard <code>MAX_AGENT_CALLS_PER_RUN</code> ceiling.</p>
+
+<h3>Threat 3 — out-of-scope and medical requests</h3>
+<p>Skincare questions shade into medicine quickly. Seven pattern families — prescription
+dosing, suspected adverse reactions, infection, oncological concern, pregnancy safety,
+diagnosed conditions, isotretinoin — are refused <i>before</i> any model call, which also
+means they cost nothing.</p>
+
+<div class=ev><span class=dim>input:</span> "my tretinoin gave me blistering and swelling, what dose should I take"
+
+<span class=bad>blocked: medical</span>
+<span class=dim>reasons:</span> ['prescription dosing', 'suspected adverse reaction']
+<span class=dim>response:</span> "DewPoint plans cosmetic routines around the weather. It is not a
+medical tool and cannot advise on this. Please speak to a dermatologist
+or your doctor — and if this involves a reaction that is spreading,
+painful, or affecting your breathing, treat it as urgent."
+<span class=dim>model calls made: 0</span></div>
+<p class=cap>Figure 5. Medical boundary. <b>Third defence shown working.</b></p>
+
+<h3>Threat 4 — overspending</h3>
+<table>
+<tr><th>Control</th><th>Value</th><th>Where</th></tr>
+<tr><td>Input character cap per field</td><td class=n>4,000</td><td><code>guard.enforce_length</code></td></tr>
+<tr><td>Token ceiling per run</td><td class=n>6,000</td><td><code>config.MAX_TOKENS_PER_RUN</code></td></tr>
+<tr><td>Max agent calls per run</td><td class=n>5</td><td><code>config.MAX_AGENT_CALLS_PER_RUN</code></td></tr>
+<tr><td>Medical / injection screen</td><td>pre-model</td><td>blocked requests cost $0</td></tr>
+</table>
+<p>The ceiling is enforced mid-pipeline: if the first two agents exceed it, the Briefer is
+skipped and the user still receives a complete structured plan. Worst-case cost per run is
+bounded at roughly ${(6000/1_000_000)*rates['output']:.5f}, about
+{6000/avg['total']:.1f}× the measured mean.</p>
+
+<h2>6. Impact</h2>
+
+<p><b>Measured on the sample shelf.</b> Parsing a real six-item order confirmation
+($324.48, dated May 2026) against today's date surfaces one unambiguous finding:</p>
+
+<div class=ev><span class=dim>expiry report — today 2026-10-25</span>
+  <span class=bad>expired</span>    5.2mo / 3mo   <span class=bad>$182.00</span>  Skinceuticals C E Ferulic Vitamin C Serum
+  <span class=dim>expiring</span>   5.2mo / 6mo   $ 48.00  Biossance Squalane Marula Facial Oil
+
+  total shelf value  $324.48
+  <span class=bad>value past window  $182.00  (56% of the shelf)</span></div>
+<p class=cap>Figure 6. A $182 serum, oxidised and still in daily use. L-ascorbic acid has a
+~3 month window once opened; past it the product is inert and can stain fabric.</p>
+
+<table>
+<tr><th>Metric</th><th>Value</th><th>Source</th></tr>
+<tr><td>Wasted product value identified, one shelf</td><td class=n>$182.00</td><td>measured, Fig. 6</td></tr>
+<tr><td>Share of shelf value past its window</td><td class=n>56%</td><td>measured, Fig. 6</td></tr>
+<tr><td>Cost to run DewPoint, per user per year</td><td class=n>${avg['cost']*RUNS_PER_USER_MONTH*12:.2f}</td><td>measured, §4</td></tr>
+<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~{182/(avg['cost']*RUNS_PER_USER_MONTH*12):,.0f}×</td><td>derived</td></tr>
+<tr><td>Time to a decision</td><td class=n>~9 s</td><td>measured, §4</td></tr>
+</table>
+
+<p><b>The honest limit on this section.</b> The $182 figure is a real computation on a real
+product set, but it is one shelf, and the user trial described below is a single session.
+This is suggestive, not established. A proper impact claim needs a cohort, a control, and a
+follow-up at 30 days, which §8 describes.</p>
+
+<div class=ph>[ USER FEEDBACK — one or two sentences from the person who tried it, with what
+they changed afterwards ]</div>
+
+<h2>7. Limits</h2>
+<ul>
+<li><b>Indoor temperature is assumed, not measured.</b> The model fixes indoor air at
+20.5 °C. A cold flat or an overheated library shifts the result by several points. The
+calculation is only as good as that assumption, and the app does not currently ask.</li>
+<li><b>No humidifier, no commute.</b> A humidifier invalidates the indoor estimate
+entirely. So does spending the day outdoors.</li>
+<li><b>The rules are editorial.</b> Dryness bands and fabric mappings reflect published
+dermatology guidance and my own reading, but they are thresholds I chose. They are
+defensible, not validated.</li>
+<li><b>Receipt parsing is regex-based</b> and tested against a handful of formats. Retailer
+emails vary enormously; coverage is unknown.</li>
+<li><b>Purchase date is not opening date.</b> Period-after-opening starts when a product is
+opened. DewPoint uses the purchase date as a proxy, which is conservative but imprecise.</li>
+<li><b>Single-user evidence.</b> See §6.</li>
+</ul>
+
+<h2>8. Next steps</h2>
+<ol>
+<li><b>Photograph the shelf.</b> The receipt path works but asks the user to find an email.
+A vision model reading a shelf photo removes that friction entirely, and was cut from this
+build only for time.</li>
+<li><b>Ask for indoor temperature once</b>, or read it from a smart thermostat. This is the
+largest single source of error and the cheapest to fix.</li>
+<li><b>Validate the thresholds.</b> Ten users, four weeks, daily one-question check-in on
+skin tightness, correlated against computed indoor RH. That turns §6 from suggestive into
+evidence.</li>
+<li><b>Move the Briefer to a non-reasoning model.</b> §4 shows {reason_pct:.0f}% of output
+tokens are internal; the Briefer is a rewriting task that does not need them.</li>
+<li><b>Seasonal pre-emption.</b> The dated inventory makes it possible to warn a user in
+October that the gel moisturiser they bought in July will be wrong in three weeks — before
+the barrier damage, not after.</li>
+</ol>
+
+<div class=ft>DewPoint · MGT 409 final project · Jennifer Pham · {date.today():%d %B %Y}<br>
+Weather from Open-Meteo. Model gpt-5.6-luna via Portkey. All token counts measured from
+provider usage fields and logged to <code>runs/usage.jsonl</code>.<br>
+Cosmetic guidance only. Not medical advice.</div>
+
+</div></body></html>"""
+
+out = HERE / "report.html"
+out.write_text(HTML)
+print(f"report.html written ({len(HTML):,} bytes) from {len(RUNS)} measured runs")
+print(f"  avg cost/run ${avg['cost']:.5f} | reasoning {reason_pct:.0f}% of output")

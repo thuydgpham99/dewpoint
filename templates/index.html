@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DewPoint — skincare and outfit, planned around the air you are actually in</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head><body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brand"><span class="dot"></span><h1>DewPoint</h1></div>
+  <p class="tagline">Your weather app reports outdoor humidity. Your skin lives in heated
+  indoor air, which is far drier. DewPoint derives the humidity your skin actually sits in
+  from the dew point, then plans your routine and your outfit around that one number.</p>
+  <div class="envbar">
+    <span class="pill">{{ model }}</span>
+    {% if key_present %}<span class="pill">key loaded</span>{% else %}<span class="pill warn">no key — degraded mode</span>{% endif %}
+    .env: {{ env_source }}
+  </div>
+</header>
+
+<div class="grid">
+  <!-- ------------------------------ input ------------------------------ -->
+  <div>
+    <div class="card">
+      <h2>Today</h2>
+      <p class="sub">Where you are, and what you own.</p>
+
+      <label for="city">City</label>
+      <input type="text" id="city" value="New Haven" placeholder="New Haven">
+      <div class="samples" id="samples">
+        {% for s in samples %}<button type="button" data-s="{{ s }}">{{ s }}</button>{% endfor %}
+      </div>
+
+      <label for="shelf">Your shelf</label>
+      <textarea id="shelf" rows="4" placeholder="CeraVe foaming cleanser, The Ordinary niacinamide, retinol 0.5%, SPF 50">CeraVe foaming cleanser, The Ordinary niacinamide 10%, retinol 0.5% serum, ceramide moisturizer, SPF 50</textarea>
+      <div class="hint">Or paste a receipt below and it fills itself.</div>
+
+      <label for="wardrobe">Your wardrobe</label>
+      <textarea id="wardrobe" rows="3" placeholder="white silk blouse, black wool coat, denim, linen shirt">white silk blouse, black wool coat, grey merino knit, denim, trench coat</textarea>
+
+      <button class="go" id="go">Plan my day</button>
+    </div>
+
+    <div class="card" style="margin-top:20px">
+      <h2>Receipt</h2>
+      <p class="sub">Paste an order confirmation. Dates let DewPoint catch oxidised
+      products and out-of-season buys.</p>
+      <textarea id="receipt" rows="5" placeholder="Paste your order confirmation email here"></textarea>
+      <button class="go" id="scan" style="margin-top:14px">Add to my shelf</button>
+      <div id="invbox" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <!-- ------------------------------ output ----------------------------- -->
+  <div id="out">
+    <div class="card"><div class="empty">Enter a city and press <b>Plan my day</b>.</div></div>
+  </div>
+</div>
+
+<footer>
+  DewPoint · MGT 409 final project · weather from
+  <a href="https://open-meteo.com">Open-Meteo</a> (no API key) ·
+  <a href="/tokenomics">measured token usage</a><br>
+  Cosmetic guidance only. Not medical advice.
+</footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+document.getElementById('samples').addEventListener('click', e => {
+  if (e.target.dataset.s) { $('#city').value = e.target.dataset.s; $('#go').click(); }
+});
+
+$('#go').addEventListener('click', async () => {
+  const btn = $('#go');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Reading the air…';
+  try {
+    const r = await fetch('/api/plan', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ city:$('#city').value, shelf:$('#shelf').value, wardrobe:$('#wardrobe').value })
+    });
+    render(await r.json());
+  } catch (err) {
+    $('#out').innerHTML = `<div class="blocked"><h3>Request failed</h3><p>${err}</p></div>`;
+  }
+  btn.disabled = false; btn.textContent = 'Plan my day';
+});
+
+$('#scan').addEventListener('click', async () => {
+  const btn = $('#scan');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Reading receipt…';
+  const r = await fetch('/api/receipt', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ receipt: $('#receipt').value, band: window._band || 'moderate' })
+  });
+  renderInventory(await r.json());
+  btn.disabled = false; btn.textContent = 'Add to my shelf';
+});
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function renderInventory(d) {
+  if (d.blocked) {
+    $('#invbox').innerHTML = `<div class="alert high"><h4>Receipt blocked</h4><p>${esc(d.message)}</p></div>`;
+    return;
+  }
+  let h = '';
+  if (d.safety && d.safety.injection_blocked) {
+    h += `<div class="alert high safety"><h4>Injected instructions removed from this receipt</h4>
+      <p>This receipt contained text aimed at the model, not at you. It was stripped before
+      anything reached it.</p>` +
+      d.safety.findings.map(f=>`<code>${esc(f.type)}: ${esc(f.matched)}</code>`).join(' ') + `</div>`;
+  }
+  const s = d.spend || {};
+  h += `<div class="metrics">
+    <div><div class="v">${s.items||0}</div><div class="k">items</div></div>
+    <div><div class="v">$${(s.total_spend||0).toFixed(0)}</div><div class="k">spent</div></div>
+    <div><div class="v">$${(s.expired_value||0).toFixed(0)}</div><div class="k">expired</div></div>
+  </div>`;
+  if ((d.expiries||[]).length) {
+    h += '<h3 class="sec">Past their window</h3>';
+    d.expiries.forEach(e=>{
+      h += `<div class="alert ${e.status==='expired'?'high':''}">
+        <h4>${esc(e.name)} — ${e.age_months} months old</h4>
+        <p>${e.status==='expired'?'Past':'Approaching'} the ${e.limit_months}-month window. ${esc(e.note)}</p></div>`;
+    });
+  }
+  const m = d.mismatch||{};
+  if ((m.wrong_for_today||[]).length) {
+    h += '<h3 class="sec">Wrong for today\'s air</h3>';
+    m.wrong_for_today.forEach(w=>{
+      h += `<div class="alert"><h4>${esc(w.name)}</h4>
+        <p>Bought ${w.bought_months_ago} months ago, in different air than today's.</p></div>`;
+    });
+  }
+  $('#invbox').innerHTML = h;
+  if (d.shelf_text) $('#shelf').value = d.shelf_text;
+}
+
+function render(d) {
+  if (d.blocked === 'medical') {
+    $('#out').innerHTML = `<div class="blocked"><h3>DewPoint cannot help with this</h3>
+      <p>${esc(d.message)}</p><p class="muted">Triggered by: ${d.reasons.join(', ')}</p></div>`;
+    return;
+  }
+  const a = d.analysis; window._band = a.band;
+  let h = '';
+
+  if (d.safety && d.safety.injection_blocked) {
+    h += `<div class="blocked"><h3>Injected instructions removed</h3>
+      <p>Your pasted text contained instructions aimed at the model. They were stripped
+      before it ran. Your plan below is unaffected.</p>` +
+      d.safety.findings.map(f=>`<code>${esc(f.type)}: ${esc(f.matched)}</code>`).join(' ') +
+      `</div>`;
+  }
+
+  h += `<div class="gap">
+    <div class="side outdoor"><div class="num">${a.outdoor_rh}%</div>
+      <div class="lbl">your weather app</div></div>
+    <div class="arrow">→</div>
+    <div class="side band-${a.band}"><div class="num">${a.indoor_rh}%</div>
+      <div class="lbl">what your skin sits in</div></div>
+  </div>
+  <div class="bandline"><b>${a.band}</b> — ${esc(a.band_note)}</div>`;
+
+  h += `<div class="metrics">
+    <div><div class="v">${a.temp_c}°</div><div class="k">now</div></div>
+    <div><div class="v">${a.temp_min_c}–${a.temp_max_c}°</div><div class="k">range</div></div>
+    <div><div class="v">${a.dew_point_c}°</div><div class="k">dew point</div></div>
+    <div><div class="v">${a.uv_index}</div><div class="k">uv</div></div>
+    <div><div class="v">${a.precip_mm}mm</div><div class="k">rain</div></div>
+    <div><div class="v">${a.wind_kph}</div><div class="k">kph wind</div></div>
+  </div>`;
+
+  if (d.brief) h += `<div class="brief">${esc(d.brief)}</div>`;
+
+  h += '<div class="cols">';
+  h += '<div class="card"><h2>Your shelf tonight</h2><ul class="items">';
+  (d.shelf.use||[]).forEach(i=>h+=`<li><span class="n">${esc(i.product)}</span><span class="tag use">${esc(i.when||'use')}</span><span class="w">${esc(i.why)}</span></li>`);
+  (d.shelf.skip||[]).forEach(i=>h+=`<li><span class="n">${esc(i.product)}</span><span class="tag skip">skip</span><span class="w">${esc(i.why)}</span></li>`);
+  h += '</ul>';
+  if (d.shelf.gap) h += `<p class="muted" style="margin-top:14px"><b>Gap:</b> ${esc(d.shelf.gap)}</p>`;
+  h += '</div>';
+
+  h += '<div class="card"><h2>What to wear</h2><ul class="items">';
+  (d.style.outfit||[]).forEach(i=>h+=`<li><span class="n">${esc(i.piece)}</span><span class="w">${esc(i.fabric)} — ${esc(i.why)}</span></li>`);
+  h += '</ul>';
+  if (d.style.swing_plan) h += `<p class="muted" style="margin-top:14px">${esc(d.style.swing_plan)}</p>`;
+  if (d.style.avoid) h += `<p class="muted"><b>Avoid:</b> ${esc(d.style.avoid)}</p>`;
+  h += '</div></div>';
+
+  if ((a.alerts||[]).length) {
+    h += '<h3 class="sec">Where your skin and your clothes collide</h3>';
+    a.alerts.forEach(al=>h+=`<div class="alert ${al.severity==='high'?'high':''}">
+      <h4>${esc(al.title)}</h4><p>${esc(al.body)}</p></div>`);
+  }
+
+  const u = d.usage||{};
+  h += `<h3 class="sec">This run, measured</h3><div class="usage"><table>
+    <tr><td>agent calls</td><td>${u.agent_calls||0}</td></tr>
+    <tr><td>input tokens</td><td>${(u.input_tokens||0).toLocaleString()}</td></tr>
+    <tr><td>cached input tokens</td><td>${(u.cached_input_tokens||0).toLocaleString()}</td></tr>
+    <tr><td>output tokens</td><td>${(u.output_tokens||0).toLocaleString()}</td></tr>
+    <tr><td>cost</td><td>$${(u.cost_usd||0).toFixed(5)}</td></tr>
+    <tr><td>latency</td><td>${u.seconds||0}s</td></tr>
+    <tr><td>weather source</td><td>${esc(d.weather_source)}</td></tr>
+  </table></div>`;
+
+  if (d.degraded) h += `<p class="muted" style="margin-top:12px">Ran in degraded mode
+    (deterministic engine only, no model). ${esc(d.degraded_reason||'')}</p>`;
+
+  $('#out').innerHTML = h;
+}
+</script>
+</body></html>

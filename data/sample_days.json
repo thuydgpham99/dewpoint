@@ -1,0 +1,32 @@
+{
+  "New Haven winter": {
+    "location": "New Haven, CT (sample: January cold snap)",
+    "temp_c": 2.0, "temp_min_c": -1.0, "temp_max_c": 4.0,
+    "dew_point_c": -1.0, "outdoor_rh": 80.0,
+    "uv_index": 2.0, "precip_mm": 0.0, "wind_kph": 28.0
+  },
+  "London damp": {
+    "location": "London, UK (sample: grey drizzle)",
+    "temp_c": 9.0, "temp_min_c": 6.0, "temp_max_c": 11.0,
+    "dew_point_c": 7.0, "outdoor_rh": 88.0,
+    "uv_index": 1.0, "precip_mm": 4.2, "wind_kph": 18.0
+  },
+  "Miami summer": {
+    "location": "Miami, FL (sample: August afternoon)",
+    "temp_c": 30.0, "temp_min_c": 26.0, "temp_max_c": 32.0,
+    "dew_point_c": 24.0, "outdoor_rh": 70.0,
+    "uv_index": 9.0, "precip_mm": 3.0, "wind_kph": 10.0
+  },
+  "Phoenix dry heat": {
+    "location": "Phoenix, AZ (sample: June)",
+    "temp_c": 38.0, "temp_min_c": 27.0, "temp_max_c": 41.0,
+    "dew_point_c": 4.0, "outdoor_rh": 12.0,
+    "uv_index": 11.0, "precip_mm": 0.0, "wind_kph": 14.0
+  },
+  "San Francisco mild": {
+    "location": "San Francisco, CA (sample: October)",
+    "temp_c": 17.0, "temp_min_c": 13.0, "temp_max_c": 21.0,
+    "dew_point_c": 11.0, "outdoor_rh": 68.0,
+    "uv_index": 5.0, "precip_mm": 0.0, "wind_kph": 22.0
+  }
+}

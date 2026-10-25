@@ -1,0 +1,50 @@
+[
+  {
+    "name": "CeraVe Foaming Facial Cleanser 16oz",
+    "price": 16.99,
+    "category": "cleanser",
+    "purchased": "2026-05-20"
+  },
+  {
+    "name": "The Ordinary Niacinamide 10% + Zinc 1%",
+    "price": 6.5,
+    "category": "other",
+    "purchased": "2026-05-20"
+  },
+  {
+    "name": "Skinceuticals C E Ferulic Vitamin C Serum",
+    "price": 182.0,
+    "category": "vitamin_c",
+    "purchased": "2026-05-20"
+  },
+  {
+    "name": "La Roche-Posay Anthelios SPF 50 Sunscreen",
+    "price": 36.99,
+    "category": "sunscreen",
+    "purchased": "2026-05-20"
+  },
+  {
+    "name": "Biossance Squalane Marula Facial Oil",
+    "price": 48.0,
+    "category": "facial_oil",
+    "purchased": "2026-05-20"
+  },
+  {
+    "name": "Paula's Choice 2% BHA Salicylic Exfoliant",
+    "price": 34.0,
+    "category": "exfoliant",
+    "purchased": "2026-05-20"
+  },
+  {
+    "name": "CeraVe Foaming Facial Cleanser",
+    "price": 16.99,
+    "category": "cleanser",
+    "purchased": "2025-03-14"
+  },
+  {
+    "name": "Retinol 0.5% in Squalane",
+    "price": 11.0,
+    "category": "retinoid",
+    "purchased": "2025-03-14"
+  }
+]

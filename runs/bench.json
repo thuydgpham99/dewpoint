@@ -1,0 +1,50 @@
+{
+  "rows": [
+    {
+      "city": "New Haven winter",
+      "three_in": 1682,
+      "three_out": 1145,
+      "three_reason": 733,
+      "three_cost": 0.000939,
+      "three_s": 1.42,
+      "one_in": 625,
+      "one_out": 929,
+      "one_reason": 512,
+      "one_cost": 0.000651,
+      "one_s": 6.93,
+      "merged_valid": true
+    },
+    {
+      "city": "Miami summer",
+      "three_in": 1696,
+      "three_out": 1049,
+      "three_reason": 666,
+      "three_cost": 0.000884,
+      "three_s": 1.04,
+      "one_in": 693,
+      "one_out": 1212,
+      "one_reason": 794,
+      "one_cost": 0.000831,
+      "one_s": 8.81,
+      "merged_valid": true
+    },
+    {
+      "city": "Phoenix dry heat",
+      "three_in": 1610,
+      "three_out": 1165,
+      "three_reason": 783,
+      "three_cost": 0.00094,
+      "three_s": 0.87,
+      "one_in": 605,
+      "one_out": 948,
+      "one_reason": 512,
+      "one_cost": 0.00066,
+      "one_s": 6.6,
+      "merged_valid": true
+    }
+  ],
+  "avg_three_cost": 0.0009209999999999999,
+  "avg_one_cost": 0.0007139999999999999,
+  "avg_three_s": 1.11,
+  "avg_one_s": 7.446666666666666
+}
