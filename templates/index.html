@@ -30,8 +30,15 @@
       <p class="hint" style="margin:-3px 0 7px">Any city name pulls live weather. The buttons
       below load bundled sample days, which work with no internet.</p>
       <input type="text" id="city" value="New Haven" placeholder="New Haven">
-      <div class="samples" id="samples">
-        {% for s in samples %}<button type="button" data-s="{{ s }}">{{ s }}</button>{% endfor %}
+      <div id="samples">
+        {% for region, cities in regions.items() %}
+        <div class="region">
+          <span class="region-name">{{ region }}</span>
+          <div class="samples">
+            {% for c in cities %}<button type="button" data-s="{{ c }}">{{ c }}</button>{% endfor %}
+          </div>
+        </div>
+        {% endfor %}
       </div>
 
       <label>Your shelf</label>
@@ -131,11 +138,30 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;',
 const CHIPS = {
   shelf: ['CeraVe foaming cleanser','The Ordinary niacinamide 10%','retinol 0.5% serum',
           'ceramide moisturizer','SPF 50'],
-  wardrobe: ['white silk blouse','black wool coat','grey merino knit','denim','trench coat'],
+  wardrobe: ['white silk blouse','black wool coat','grey merino knit','denim',
+             'trench coat','cotton tee','cashmere scarf'],
+};
+/* Grouped so the list can be long without becoming a wall. */
+const SUGGEST_GROUPS = {
+  shelf: {
+    'Cleanse':   ['cream cleanser','gel cleanser','micellar water','salicylic acid cleanser','oil cleanser'],
+    'Treat':     ['vitamin C serum','niacinamide','retinal 0.1%','azelaic acid','glycolic acid toner','peptide serum','BHA exfoliant'],
+    'Hydrate':   ['hyaluronic acid','ceramide cream','gel moisturizer','squalane oil','rosehip facial oil','occlusive balm','thermal water mist'],
+    'Protect':   ['mineral SPF 30','chemical SPF 50','lip balm with SPF','tinted sunscreen'],
+    'Weekly':    ['sheet mask','clay mask','overnight mask','body lotion'],
+  },
+  wardrobe: {
+    'Tops':      ['cotton tee','silk blouse','linen shirt','cotton shirt','ribbed tank','turtleneck'],
+    'Layers':    ['merino knit','cashmere jumper','knit cardigan','hoodie','blazer','fleece','thermal base layer'],
+    'Outerwear': ['wool coat','trench coat','puffer jacket','denim jacket','leather jacket','light raincoat','parka'],
+    'Bottoms':   ['jeans','tailored trousers','wide-leg linen trousers','pleated midi skirt','shorts','joggers'],
+    'Dresses':   ['silk slip dress','cotton shirt dress','knit midi dress','ao dai','linen sundress'],
+    'Finish':    ['cashmere scarf','cotton scarf','sun hat','beanie','leather boots','white trainers','loafers','sandals'],
+  },
 };
 const SUGGEST = {
-  shelf: ['hyaluronic acid','vitamin C serum','squalane oil','glycolic toner','sheet mask','clay mask'],
-  wardrobe: ['linen shirt','cotton tee','puffer','cashmere scarf','leather boots','silk slip dress'],
+  shelf: Object.values(SUGGEST_GROUPS.shelf).flat(),
+  wardrobe: Object.values(SUGGEST_GROUPS.wardrobe).flat(),
 };
 
 function drawChips(which) {
@@ -154,13 +180,29 @@ function drawChips(which) {
 
 function drawQuick(which) {
   const q = document.getElementById(which + 'Quick');
-  const left = SUGGEST[which].filter(v => !CHIPS[which].includes(v));
   q.innerHTML = '';
-  left.slice(0,4).forEach(v => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.textContent = '+ ' + v;
-    b.onclick = () => { CHIPS[which].push(v); drawChips(which); };
-    q.appendChild(b);
+  const groups = SUGGEST_GROUPS[which];
+
+  Object.keys(groups).forEach(name => {
+    const left = groups[name].filter(v => !CHIPS[which].includes(v));
+    if (!left.length) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'sgroup';
+    const lbl = document.createElement('span');
+    lbl.className = 'sgroup-name'; lbl.textContent = name;
+    wrap.appendChild(lbl);
+
+    const row = document.createElement('div');
+    row.className = 'srow';
+    left.forEach(v => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = v;
+      b.onclick = () => { CHIPS[which].push(v); drawChips(which); };
+      row.appendChild(b);
+    });
+    wrap.appendChild(row);
+    q.appendChild(wrap);
   });
 }
 
@@ -207,10 +249,25 @@ function gauge(a) {
       <h3>The air your skin is in</h3>
       <span class="loc">${esc(a.location)}</span>
     </div>
+    <div class="mode-note mode-${a.mode}">
+      <b>${a.mode === 'cooled' ? 'Air conditioned' : 'Heated'}</b>
+      ${a.mode === 'cooled'
+        ? `It is ${a.temp_c}° outside, so the building is being cooled. Air conditioning pulls
+           air across a coil near 13°, far below its ${a.dew_point_c}° dew point, and water
+           condenses out and drains away. The air reaching you is <b>drier</b> than the
+           ${a.outdoor_rh}% outdoors — which is why skin feels tight indoors in a humid city.`
+        : `It is ${a.temp_c}° outside, so the building is being heated. Warming air to ${a.indoor_temp_c}°
+           raises how much water it <i>could</i> hold without adding any, so its relative
+           humidity collapses from ${a.outdoor_rh}% with nothing removed.`}
+    </div>
     <div class="gauge">
       <div class="tickrow">${ticks}</div>
       <div class="drop" style="left:${lo}%;width:${hi-lo}%"></div>
-      ${hi-lo > 3 ? `<div class="drop-lbl" style="left:${(lo+hi)/2}%">${delta} points lost to heating</div>` : ''}
+      ${hi-lo > 3 ? `<div class="drop-lbl" style="left:${Math.min(76, Math.max(24, (lo+hi)/2))}%">${delta} points ${
+        indoor < outdoor
+          ? (a.mode === 'cooled' ? 'wrung out by the air conditioning' : 'lost to heating')
+          : (a.mode === 'cooled' ? 'added by the air conditioning' : 'gained indoors')
+      }</div>` : ''}
       <div class="mk outdoor" style="left:${outdoor}%">
         <div class="flag"><div class="v" data-v="${a.outdoor_rh}">0%</div><div class="t">outdoors</div></div>
         <div class="stem"></div>
@@ -354,18 +411,35 @@ function render(d) {
 
   h += suggestion(d.shelf.gap, d.purchase_context);
 
-  h += '<div class="cols rv">';
+  h += '<div class="cols cols-wide rv">';
   h += '<div class="card"><h2>Your shelf tonight</h2><ul class="items">';
   (d.shelf.use||[]).forEach(i=>h+=`<li><span class="n">${esc(i.product)}</span><span class="tag use">${esc(i.when||'use')}</span><span class="w">${esc(i.why)}</span></li>`);
   (d.shelf.skip||[]).forEach(i=>h+=`<li><span class="n">${esc(i.product)}</span><span class="tag skip">skip</span><span class="w">${esc(i.why)}</span></li>`);
   h += '</ul>';
   h += '</div>';
 
-  h += '<div class="card"><h2>What to wear</h2><ul class="items">';
-  (d.style.outfit||[]).forEach(i=>h+=`<li><span class="n">${esc(i.piece)}</span><span class="w">${esc(i.fabric)} — ${esc(i.why)}</span></li>`);
-  h += '</ul>';
-  if (d.style.swing_plan) h += `<p class="muted" style="margin-top:14px">${esc(d.style.swing_plan)}</p>`;
-  if (d.style.avoid) h += `<p class="muted"><b>Avoid:</b> ${esc(d.style.avoid)}</p>`;
+  const sw = a.swing || {};
+  const pieces = list => (list||[]).map(i =>
+    `<li><span class="n">${esc(i.piece)}</span><span class="w">${esc(i.fabric)} — ${esc(i.why)}</span></li>`
+  ).join('') || '<li class="w">—</li>';
+
+  h += `<div class="card"><h2>What to wear</h2>
+    <div class="daysplit">
+      <div class="half">
+        <div class="hhead"><span class="when">Morning</span>
+          <span class="deg">${sw.morning ? sw.morning.temp_c + '°' : ''}</span></div>
+        <ul class="items">${pieces(d.style.morning)}</ul>
+      </div>
+      <div class="arrowcol" aria-hidden="true">→</div>
+      <div class="half">
+        <div class="hhead"><span class="when">Afternoon</span>
+          <span class="deg">${sw.afternoon ? sw.afternoon.temp_c + '°' : ''}</span></div>
+        <ul class="items">${pieces(d.style.afternoon)}</ul>
+      </div>
+    </div>`;
+  if (d.style.transition) h += `<p class="transition">${esc(d.style.transition)}</p>`;
+  if (sw.verdict) h += `<p class="muted" style="margin-top:9px">${esc(sw.verdict)}</p>`;
+  if (d.style.avoid) h += `<p class="muted" style="margin-top:7px"><b>Avoid:</b> ${esc(d.style.avoid)}</p>`;
   h += '</div></div>';
 
   if ((a.alerts||[]).length) {

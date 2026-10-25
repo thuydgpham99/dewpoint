@@ -15,8 +15,12 @@ actually predicts transepidermal water loss.
 import math
 from dataclasses import dataclass, field
 
-# Assumed indoor air temperature in C. Heated buildings sit near this.
-INDOOR_TEMP_C = 20.5
+# Assumed indoor air temperature in C, by mode.
+INDOOR_TEMP_C = 20.5          # heating season setpoint
+INDOOR_TEMP_COOLED_C = 24.0   # cooling season setpoint -- people set AC higher
+COOLING_THRESHOLD_C = 24.0    # above this outdoors, assume the building is cooled
+AC_COIL_TEMP_C = 13.0         # typical evaporator coil; air leaves near saturated at this
+AC_BYPASS_FACTOR = 0.25       # share of air that misses the coil, plus infiltration
 
 
 def saturation_vapor_pressure(temp_c: float) -> float:
@@ -35,12 +39,54 @@ def absolute_humidity(temp_c: float, dew_point_c: float) -> float:
     return 2.1674 * (e * 100) / (273.15 + temp_c) / 100
 
 
-def indoor_relative_humidity(dew_point_c: float, indoor_temp_c: float = INDOOR_TEMP_C) -> float:
-    """The headline number.
+def indoor_conditions(temp_c: float, dew_point_c: float) -> dict:
+    """The headline number, and how the building got there.
 
-    Take outdoor air at its measured dew point, heat it to room temperature
-    without adding moisture, and ask what its relative humidity becomes.
+    Two very different processes dry indoor air, and which one applies depends
+    on whether the building is heating or cooling:
+
+    HEATING (cold outside). Outdoor air is warmed to room temperature with no
+    moisture added. Its capacity rises sharply, its water content does not, so
+    relative humidity collapses. This is the classic winter-dry-skin mechanism.
+
+    COOLING (hot outside). Air conditioning pulls air across a coil near 13 C,
+    far below its dew point, so water condenses out and runs off as the
+    condensate you see dripping from an AC unit. The air is then delivered at
+    room temperature carrying much *less* water than it started with. This is
+    why a room in Hanoi or Singapore can be drier than the 80% humidity
+    outdoors -- and why tropical-city skin gets tight indoors, which is not
+    something a weather app would ever suggest.
+
+    Returns the indoor RH plus the mode and the effective dew point, so the
+    interface can explain which mechanism is at work.
     """
+    if temp_c >= COOLING_THRESHOLD_C:
+        # Air crossing the coil leaves close to saturated at the coil
+        # temperature. Not all of it touches the coil though -- some bypasses
+        # it, and more leaks in around doors and windows -- so the delivered
+        # dew point sits a little above the coil. Without this term every
+        # tropical city returns an identical figure, which is tidier than the
+        # truth.
+        if dew_point_c > AC_COIL_TEMP_C:
+            effective_dew = AC_COIL_TEMP_C + AC_BYPASS_FACTOR * (dew_point_c - AC_COIL_TEMP_C)
+        else:
+            effective_dew = dew_point_c
+        indoor_temp = INDOOR_TEMP_COOLED_C
+        mode = "cooled"
+    else:
+        effective_dew = dew_point_c
+        indoor_temp = INDOOR_TEMP_C
+        mode = "heated"
+
+    e = actual_vapor_pressure(effective_dew)
+    es_indoor = saturation_vapor_pressure(indoor_temp)
+    rh = max(0.0, min(100.0, (e / es_indoor) * 100))
+    return {"indoor_rh": rh, "mode": mode,
+            "effective_dew_point_c": effective_dew, "indoor_temp_c": indoor_temp}
+
+
+def indoor_relative_humidity(dew_point_c: float, indoor_temp_c: float = INDOOR_TEMP_C) -> float:
+    """Heating-season form, kept for direct use and tests."""
     e = actual_vapor_pressure(dew_point_c)
     es_indoor = saturation_vapor_pressure(indoor_temp_c)
     return max(0.0, min(100.0, (e / es_indoor) * 100))
@@ -134,6 +180,57 @@ def fabric_for(temp_c: float):
     return FABRIC_RULES[-1]
 
 
+# How much of a swing is worth dressing around. Below this, one outfit is fine
+# and pretending otherwise is noise.
+SWING_MATTERS_C = 6.0
+
+
+def swing_plan(temp_min_c: float, temp_max_c: float) -> dict:
+    """Separate guidance for the cold end and the warm end of the day.
+
+    A single outfit is only honest when the day is flat. A 10 degree swing is
+    two different sets of clothes, and the useful advice is what comes off and
+    when -- which is computed here, not guessed by the model.
+    """
+    swing = temp_max_c - temp_min_c
+    morning = fabric_for(temp_min_c)
+    afternoon = fabric_for(temp_max_c)
+
+    matters = swing >= SWING_MATTERS_C or morning["layers"] != afternoon["layers"]
+    shed = max(0, morning["layers"] - afternoon["layers"])
+
+    big = swing >= SWING_MATTERS_C
+
+    if not matters:
+        verdict = f"A {swing:.1f}° swing. One outfit covers the whole day."
+    elif shed and big:
+        verdict = (f"A {swing:.1f}° swing. Dress for {temp_min_c:.0f}° and plan to take "
+                   f"{shed} layer{'s' if shed > 1 else ''} off by the afternoon — so the "
+                   f"outer layer has to be one you can carry.")
+    elif shed:
+        # Small swing, but it straddles a threshold. Say so, rather than making
+        # a 2 degree change sound like a wardrobe event.
+        verdict = (f"Only a {swing:.1f}° swing, but it crosses a layering threshold at "
+                   f"{temp_min_c:.0f}–{temp_max_c:.0f}°. Either layer works; take the lighter "
+                   f"option if you will be walking.")
+    else:
+        verdict = (f"A {swing:.1f}° swing within one layer band. Same pieces, but choose "
+                   f"a fabric that breathes rather than one that insulates.")
+
+    return {
+        "swing_c": round(swing, 1),
+        "matters": matters,
+        "layers_to_shed": shed,
+        "verdict": verdict,
+        "morning": {"temp_c": round(temp_min_c, 1), "layers": morning["layers"],
+                    "fabrics": morning["fabrics"], "avoid": morning["avoid"],
+                    "why": morning["why"]},
+        "afternoon": {"temp_c": round(temp_max_c, 1), "layers": afternoon["layers"],
+                      "fabrics": afternoon["fabrics"], "avoid": afternoon["avoid"],
+                      "why": afternoon["why"]},
+    }
+
+
 # ---------------------------------------------------------------------------
 # The cross-domain conflicts. This is the whole reason skincare and outfit
 # belong in one product: the day's protocol on your skin changes what the
@@ -217,9 +314,13 @@ class DayAnalysis:
     wind_kph: float = 0.0
     band: str = ""
     band_note: str = ""
+    mode: str = "heated"
+    effective_dew_point_c: float = 0.0
+    indoor_temp_c: float = 0.0
     swing_c: float = 0.0
     skin: dict = field(default_factory=dict)
     fabric: dict = field(default_factory=dict)
+    swing: dict = field(default_factory=dict)
     alerts: list = field(default_factory=list)
 
 
@@ -228,7 +329,8 @@ def analyse(weather: dict) -> DayAnalysis:
     temp = weather["temp_c"]
     dew = weather["dew_point_c"]
 
-    indoor_rh = indoor_relative_humidity(dew)
+    cond = indoor_conditions(temp, dew)
+    indoor_rh = cond["indoor_rh"]
     band, band_note = dryness_band(indoor_rh)
 
     a = DayAnalysis(
@@ -245,10 +347,14 @@ def analyse(weather: dict) -> DayAnalysis:
         wind_kph=round(weather.get("wind_kph", 0.0), 1),
         band=band,
         band_note=band_note,
+        mode=cond["mode"],
+        effective_dew_point_c=round(cond["effective_dew_point_c"], 1),
+        indoor_temp_c=cond["indoor_temp_c"],
     )
     a.swing_c = round(a.temp_max_c - a.temp_min_c, 1)
     a.skin = SKIN_RULES[band]
     a.fabric = fabric_for(a.temp_max_c)
+    a.swing = swing_plan(a.temp_min_c, a.temp_max_c)
     a.alerts = cross_domain_alerts(band, a.uv_index, a.precip_mm, a.wind_kph, a.temp_c)
     return a
 
@@ -264,5 +370,7 @@ def analysis_to_dict(a: DayAnalysis) -> dict:
         "absolute_humidity": a.absolute_humidity,
         "uv_index": a.uv_index, "precip_mm": a.precip_mm, "wind_kph": a.wind_kph,
         "band": a.band, "band_note": a.band_note,
-        "skin": a.skin, "fabric": a.fabric, "alerts": a.alerts,
+        "mode": a.mode, "effective_dew_point_c": a.effective_dew_point_c,
+        "indoor_temp_c": a.indoor_temp_c,
+        "skin": a.skin, "fabric": a.fabric, "swing": a.swing, "alerts": a.alerts,
     }

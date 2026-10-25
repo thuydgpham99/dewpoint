@@ -1,32 +1,98 @@
 {
-  "New Haven winter": {
-    "location": "New Haven, CT (sample: January cold snap)",
+  "New Haven": {
+    "location": "New Haven, CT (sample: January cold snap)", "region": "Americas",
     "temp_c": 2.0, "temp_min_c": -1.0, "temp_max_c": 4.0,
     "dew_point_c": -1.0, "outdoor_rh": 80.0,
     "uv_index": 2.0, "precip_mm": 0.0, "wind_kph": 28.0
   },
-  "London damp": {
-    "location": "London, UK (sample: grey drizzle)",
-    "temp_c": 9.0, "temp_min_c": 6.0, "temp_max_c": 11.0,
-    "dew_point_c": 7.0, "outdoor_rh": 88.0,
-    "uv_index": 1.0, "precip_mm": 4.2, "wind_kph": 18.0
+  "New York": {
+    "location": "New York, NY (sample: January)", "region": "Americas",
+    "temp_c": 1.0, "temp_min_c": -3.0, "temp_max_c": 3.0,
+    "dew_point_c": -6.0, "outdoor_rh": 58.0,
+    "uv_index": 2.0, "precip_mm": 0.0, "wind_kph": 24.0
   },
-  "Miami summer": {
-    "location": "Miami, FL (sample: August afternoon)",
-    "temp_c": 30.0, "temp_min_c": 26.0, "temp_max_c": 32.0,
-    "dew_point_c": 24.0, "outdoor_rh": 70.0,
-    "uv_index": 9.0, "precip_mm": 3.0, "wind_kph": 10.0
+  "Mexico City": {
+    "location": "Mexico City, MX (sample: November)", "region": "Americas",
+    "temp_c": 20.0, "temp_min_c": 11.0, "temp_max_c": 23.0,
+    "dew_point_c": 9.0, "outdoor_rh": 50.0,
+    "uv_index": 8.0, "precip_mm": 0.0, "wind_kph": 11.0
   },
-  "Phoenix dry heat": {
-    "location": "Phoenix, AZ (sample: June)",
+  "Phoenix": {
+    "location": "Phoenix, AZ (sample: June)", "region": "Americas",
     "temp_c": 38.0, "temp_min_c": 27.0, "temp_max_c": 41.0,
     "dew_point_c": 4.0, "outdoor_rh": 12.0,
     "uv_index": 11.0, "precip_mm": 0.0, "wind_kph": 14.0
   },
-  "San Francisco mild": {
-    "location": "San Francisco, CA (sample: October)",
-    "temp_c": 17.0, "temp_min_c": 13.0, "temp_max_c": 21.0,
-    "dew_point_c": 11.0, "outdoor_rh": 68.0,
-    "uv_index": 5.0, "precip_mm": 0.0, "wind_kph": 22.0
+  "London": {
+    "location": "London, UK (sample: grey drizzle)", "region": "Europe",
+    "temp_c": 9.0, "temp_min_c": 6.0, "temp_max_c": 11.0,
+    "dew_point_c": 7.0, "outdoor_rh": 88.0,
+    "uv_index": 1.0, "precip_mm": 4.2, "wind_kph": 18.0
+  },
+  "Reykjavik": {
+    "location": "Reykjavik, IS (sample: March)", "region": "Europe",
+    "temp_c": 2.0, "temp_min_c": -2.0, "temp_max_c": 4.0,
+    "dew_point_c": 0.0, "outdoor_rh": 84.0,
+    "uv_index": 1.0, "precip_mm": 2.1, "wind_kph": 42.0
+  },
+  "Paris": {
+    "location": "Paris, FR (sample: October)", "region": "Europe",
+    "temp_c": 13.0, "temp_min_c": 8.0, "temp_max_c": 16.0,
+    "dew_point_c": 8.0, "outdoor_rh": 72.0,
+    "uv_index": 3.0, "precip_mm": 0.6, "wind_kph": 15.0
+  },
+  "Hanoi": {
+    "location": "Hanoi, VN (sample: July, monsoon)", "region": "Asia",
+    "temp_c": 32.0, "temp_min_c": 27.0, "temp_max_c": 35.0,
+    "dew_point_c": 26.0, "outdoor_rh": 74.0,
+    "uv_index": 10.0, "precip_mm": 12.0, "wind_kph": 9.0
+  },
+  "Hanoi winter": {
+    "location": "Hanoi, VN (sample: January, nom dong)", "region": "Asia",
+    "temp_c": 15.0, "temp_min_c": 12.0, "temp_max_c": 18.0,
+    "dew_point_c": 13.0, "outdoor_rh": 87.0,
+    "uv_index": 3.0, "precip_mm": 1.4, "wind_kph": 12.0
+  },
+  "Seoul": {
+    "location": "Seoul, KR (sample: January)", "region": "Asia",
+    "temp_c": -3.0, "temp_min_c": -8.0, "temp_max_c": 1.0,
+    "dew_point_c": -10.0, "outdoor_rh": 55.0,
+    "uv_index": 2.0, "precip_mm": 0.0, "wind_kph": 17.0
+  },
+  "Tokyo": {
+    "location": "Tokyo, JP (sample: October)", "region": "Asia",
+    "temp_c": 20.0, "temp_min_c": 16.0, "temp_max_c": 23.0,
+    "dew_point_c": 14.0, "outdoor_rh": 68.0,
+    "uv_index": 4.0, "precip_mm": 0.0, "wind_kph": 13.0
+  },
+  "Singapore": {
+    "location": "Singapore, SG (sample: any day)", "region": "Asia",
+    "temp_c": 31.0, "temp_min_c": 26.0, "temp_max_c": 33.0,
+    "dew_point_c": 25.0, "outdoor_rh": 75.0,
+    "uv_index": 11.0, "precip_mm": 7.0, "wind_kph": 10.0
+  },
+  "Mumbai": {
+    "location": "Mumbai, IN (sample: July monsoon)", "region": "Asia",
+    "temp_c": 29.0, "temp_min_c": 26.0, "temp_max_c": 31.0,
+    "dew_point_c": 25.0, "outdoor_rh": 80.0,
+    "uv_index": 8.0, "precip_mm": 22.0, "wind_kph": 26.0
+  },
+  "Dubai": {
+    "location": "Dubai, AE (sample: August)", "region": "Middle East & Africa",
+    "temp_c": 41.0, "temp_min_c": 33.0, "temp_max_c": 44.0,
+    "dew_point_c": 19.0, "outdoor_rh": 32.0,
+    "uv_index": 11.0, "precip_mm": 0.0, "wind_kph": 16.0
+  },
+  "Lagos": {
+    "location": "Lagos, NG (sample: June)", "region": "Middle East & Africa",
+    "temp_c": 28.0, "temp_min_c": 24.0, "temp_max_c": 30.0,
+    "dew_point_c": 24.0, "outdoor_rh": 79.0,
+    "uv_index": 9.0, "precip_mm": 9.0, "wind_kph": 14.0
+  },
+  "Sydney": {
+    "location": "Sydney, AU (sample: April)", "region": "Oceania",
+    "temp_c": 22.0, "temp_min_c": 17.0, "temp_max_c": 25.0,
+    "dew_point_c": 14.0, "outdoor_rh": 62.0,
+    "uv_index": 6.0, "precip_mm": 0.0, "wind_kph": 19.0
   }
 }

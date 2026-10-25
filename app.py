@@ -16,6 +16,15 @@ from weather import FIXTURES, fetch
 app = Flask(__name__)
 
 
+def grouped_samples():
+    """Sample cities grouped by region, for the picker."""
+    out = {}
+    for name, payload in FIXTURES.items():
+        out.setdefault(payload.get("region", "Other"), []).append(name)
+    order = ["Americas", "Europe", "Asia", "Middle East & Africa", "Oceania"]
+    return {r: out[r] for r in order if r in out}
+
+
 @app.route("/")
 def index():
     return render_template(
@@ -23,7 +32,7 @@ def index():
         env_source=config.ENV_SOURCE,
         key_present=bool(config.PORTKEY_API_KEY),
         model=config.MODEL,
-        samples=list(FIXTURES.keys()),
+        regions=grouped_samples(),
         year=datetime.now().year,
     )
 
