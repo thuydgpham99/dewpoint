@@ -111,7 +111,7 @@ HTML = f"""<!doctype html><html lang=en><head><meta charset=utf-8>
 <div class=meta>
 <b>Author:</b> Jennifer Pham &nbsp;·&nbsp; <b>Course:</b> MGT 409 &nbsp;·&nbsp;
 <b>Date:</b> {date.today():%d %B %Y}<br>
-<b>Repository:</b> <a href="REPO_URL_HERE">REPO_URL_HERE</a><br>
+<b>Repository:</b> <a href="https://github.com/thuydgpham99/dewpoint">github.com/thuydgpham99/dewpoint</a><br>
 <b>Model:</b> gpt-5.6-luna via Portkey &nbsp;·&nbsp;
 <b>Runs measured for this report:</b> {len(RUNS)}<br><br>
 DewPoint derives the relative humidity your skin actually sits in — indoor air, not the
