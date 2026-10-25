@@ -151,6 +151,13 @@ plus a genuine barrier-damage cycle: dry air causes flaking, flaking is mistaken
 congestion, the user exfoliates, the barrier degrades further. The cost is both financial
 and dermatological.</p>
 
+<div class=box><h4>Dew point, in one sentence</h4>
+<p style="margin:0">The <b>dew point</b> is the temperature at which air becomes saturated
+and water condenses out of it. Unlike relative humidity, it is an <i>absolute</i> measure
+of how much water the air actually contains — it does not move when the temperature does.
+That property is what makes it the right input here, and it is why the product is named
+after it.</p></div>
+
 <p><b>The thing nobody is told.</b> Relative humidity is relative to temperature. Cold air
 holds very little water even at high relative humidity. When that air is drawn into a
 heated building and warmed to room temperature, its capacity rises sharply while its

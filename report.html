@@ -58,7 +58,7 @@ code{background:#f3ede6;padding:1px 5px;border-radius:3px;font-size:9pt;
 <b>Date:</b> 25 October 2026<br>
 <b>Repository:</b> <a href="https://github.com/thuydgpham99/dewpoint">github.com/thuydgpham99/dewpoint</a><br>
 <b>Model:</b> gpt-5.6-luna via Portkey &nbsp;·&nbsp;
-<b>Runs measured for this report:</b> 16<br><br>
+<b>Runs measured for this report:</b> 18<br><br>
 DewPoint derives the relative humidity your skin actually sits in — indoor air, not the
 outdoor figure your weather app reports — and uses that one number to plan both your
 skincare routine and what you wear.
@@ -85,6 +85,13 @@ a product recommendation rather than a diagnosis.</p>
 plus a genuine barrier-damage cycle: dry air causes flaking, flaking is mistaken for
 congestion, the user exfoliates, the barrier degrades further. The cost is both financial
 and dermatological.</p>
+
+<div class=box><h4>Dew point, in one sentence</h4>
+<p style="margin:0">The <b>dew point</b> is the temperature at which air becomes saturated
+and water condenses out of it. Unlike relative humidity, it is an <i>absolute</i> measure
+of how much water the air actually contains — it does not move when the temperature does.
+That property is what makes it the right input here, and it is why the product is named
+after it.</p></div>
 
 <p><b>The thing nobody is told.</b> Relative humidity is relative to temperature. Cold air
 holds very little water even at high relative humidity. When that air is drawn into a
@@ -190,7 +197,7 @@ the model's job removes the failure mode by construction.</p>
 measured it, the choice is defensible on its own terms for agents 1 and 2 — both emit
 small, strictly-shaped JSON where reliability matters more than fluency — but it is a
 poor fit for agent 3, and the measurements in §4 show why: the model spends
-<b>64% of its output budget on hidden reasoning tokens</b>, which is
+<b>63% of its output budget on hidden reasoning tokens</b>, which is
 expensive for a task that is essentially rewriting. If a cheaper non-reasoning model were
 available on the course key, the Briefer is the call I would move first.</p>
 
@@ -240,22 +247,22 @@ sorting and the outfit are all produced from that one number.</p>
 
 <p>Every figure in this section is read from the provider's own <code>usage</code> field
 and logged to <code>runs/usage.jsonl</code> by <code>meter.py</code>. Nothing is estimated.
-Measured across <b>16 runs</b>.</p>
+Measured across <b>18 runs</b>.</p>
 
 <table>
 <tr><th>Measure</th><th>Per run (mean)</th></tr>
-<tr><td>Input tokens</td><td class=n>1,632</td></tr>
+<tr><td>Input tokens</td><td class=n>1,647</td></tr>
 <tr><td>Cached input tokens</td><td class=n>0</td></tr>
-<tr><td>Output tokens (visible + reasoning)</td><td class=n>1,072</td></tr>
-<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>685 (64%)</td></tr>
-<tr><td><b>Total tokens</b></td><td class=n><b>2,704</b></td></tr>
-<tr><td><b>Cost per run</b></td><td class=n><b>$0.00089</b></td></tr>
+<tr><td>Output tokens (visible + reasoning)</td><td class=n>1,097</td></tr>
+<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>693 (63%)</td></tr>
+<tr><td><b>Total tokens</b></td><td class=n><b>2,744</b></td></tr>
+<tr><td><b>Cost per run</b></td><td class=n><b>$0.00091</b></td></tr>
 </table>
 
 <h3>The finding that matters</h3>
-<div class="box warn"><h4>64% of output tokens are never shown to the user</h4>
+<div class="box warn"><h4>63% of output tokens are never shown to the user</h4>
 <p style="margin:0">This model reasons before answering, and reasoning tokens bill at the
-output rate. On a typical run 685 of 1,072 output tokens
+output rate. On a typical run 693 of 1,097 output tokens
 were internal. The visible answer — the part the user reads — is roughly a third of what
 is paid for. Any cost model built on visible output length would understate the bill by
 about 3×.</p></div>
@@ -268,19 +275,19 @@ $0.15/1M input, $0.075/1M cached, $0.6/1M output.</p>
 <table>
 <tr><th>Scale</th><th>Runs / month</th><th>Cost / month</th><th>Cost / year</th></tr>
 <tr><td>One user</td><td class=n>20</td>
-<td class=n>$0.0178</td>
-<td class=n>$0.21</td></tr>
+<td class=n>$0.0181</td>
+<td class=n>$0.22</td></tr>
 <tr><td>100 users</td><td class=n>2,000</td>
-<td class=n>$1.78</td>
-<td class=n>$21.31</td></tr>
+<td class=n>$1.81</td>
+<td class=n>$21.72</td></tr>
 <tr><td>10,000 users</td><td class=n>200,000</td>
-<td class=n>$177.56</td>
-<td class=n>$2,130.75</td></tr>
+<td class=n>$181.03</td>
+<td class=n>$2,172.40</td></tr>
 </table>
 
 <p>At 10,000 users the model bill is roughly
-<b>$2,131 per year</b> — about
-<b>$0.21 per user per year</b>. Weather costs nothing
+<b>$2,172 per year</b> — about
+<b>$0.22 per user per year</b>. Weather costs nothing
 (Open-Meteo, no key). The deterministic engine costs nothing. Inference is effectively
 the entire marginal cost of the product.</p>
 
@@ -421,8 +428,8 @@ bounded at roughly $0.00360, about
 <tr><th>Metric</th><th>Value</th><th>Source</th></tr>
 <tr><td>Wasted product value identified, one shelf</td><td class=n>$182.00</td><td>measured, Fig. 6</td></tr>
 <tr><td>Share of shelf value past its window</td><td class=n>56%</td><td>measured, Fig. 6</td></tr>
-<tr><td>Cost to run DewPoint, per user per year</td><td class=n>$0.21</td><td>measured, §4</td></tr>
-<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~854×</td><td>derived</td></tr>
+<tr><td>Cost to run DewPoint, per user per year</td><td class=n>$0.22</td><td>measured, §4</td></tr>
+<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~838×</td><td>derived</td></tr>
 <tr><td>Time to a decision</td><td class=n>~9 s</td><td>measured, §4</td></tr>
 </table>
 
@@ -461,7 +468,7 @@ largest single source of error and the cheapest to fix.</li>
 <li><b>Validate the thresholds.</b> Ten users, four weeks, daily one-question check-in on
 skin tightness, correlated against computed indoor RH. That turns §6 from suggestive into
 evidence.</li>
-<li><b>Move the Briefer to a non-reasoning model.</b> §4 shows 64% of output
+<li><b>Move the Briefer to a non-reasoning model.</b> §4 shows 63% of output
 tokens are internal; the Briefer is a rewriting task that does not need them.</li>
 <li><b>Seasonal pre-emption.</b> The dated inventory makes it possible to warn a user in
 October that the gel moisturiser they bought in July will be wrong in three weeks — before
