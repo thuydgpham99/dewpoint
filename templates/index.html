@@ -7,17 +7,24 @@
 <div class="wrap">
 
 <header class="top">
-  <div class="brand"><span class="dot"></span><h1>DewPoint</h1></div>
-  <p class="tagline">The humidity on your weather app is <b>outside</b>. Your skin is
-  <b>inside</b> — where heating strips the air in winter and air conditioning wrings it out
-  in summer. Either way it is nothing like the number you were shown.</p>
-  <p class="tagline2">DewPoint works out the humidity your skin is actually in, then plans
-  your routine and your outfit around it. Across 16 cities, <b>9 of them land in a different
-  advice band</b> once you compute it.</p>
+  <div class="brand"><span class="dot"></span><span class="wordmark">DewPoint</span></div>
+
+  <h2 class="hero">Your skin doesn't<br>live outside.</h2>
+
+  <p class="hero-sub">The forecast says one thing. The air actually touching your face says
+  another — heating strips it in winter, air conditioning wrings it out in summer. DewPoint
+  works out the real number, then builds your routine and your outfit around it.</p>
+
+  <div class="proof">
+    <span class="proof-stat">9 of 16</span>
+    <span class="proof-text">cities we tested need completely different skincare once you
+    use the indoor number instead of the forecast</span>
+  </div>
+
   <div class="envbar">
     <span class="pill">{{ model }}</span>
     {% if key_present %}<span class="pill">key loaded</span>{% else %}<span class="pill warn">no key — degraded mode</span>{% endif %}
-    .env: {{ env_source }}
+    <span class="envpath">.env: {{ env_source }}</span>
   </div>
 </header>
 
