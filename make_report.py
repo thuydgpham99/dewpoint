@@ -25,6 +25,32 @@ HERE = Path(__file__).resolve().parent
 RUNS = all_runs()
 BENCH = json.loads((HERE / "runs/bench.json").read_text()) if (HERE / "runs/bench.json").exists() else None
 
+# ---- how often does the outdoor reading give different advice? ----------
+from climate import analyse, analysis_to_dict, dryness_band  # noqa: E402
+
+_fx = json.loads((HERE / "data/sample_days.json").read_text())
+_band_rows, _disagree, _gaps = [], 0, []
+for _name, _w in _fx.items():
+    _a = analysis_to_dict(analyse(_w))
+    _ob, _ = dryness_band(_a["outdoor_rh"])
+    _same = _ob == _a["band"]
+    if not _same:
+        _disagree += 1
+    _gaps.append(abs(_a["outdoor_rh"] - _a["indoor_rh"]))
+    _band_rows.append((_name, _a["outdoor_rh"], _ob, _a["indoor_rh"], _a["band"],
+                       _a["mode"], _same))
+_band_rows.sort(key=lambda r: r[3])
+BAND_TABLE = "".join(
+    f'<tr{"" if same else " class=diff"}><td>{n}</td><td class=n>{orh:.0f}%</td>'
+    f'<td>{ob}</td><td class=n>{irh:.1f}%</td><td>{ib}</td><td>{mode}</td>'
+    f'<td>{"same" if same else "<b>different</b>"}</td></tr>'
+    for n, orh, ob, irh, ib, mode, same in _band_rows)
+N_CITIES = len(_band_rows)
+DISAGREE = _disagree
+DISAGREE_PCT = _disagree / N_CITIES * 100
+MEAN_GAP = sum(_gaps) / len(_gaps)
+MAX_GAP = max(_gaps)
+
 n = len(RUNS) or 1
 avg = {
     "input": sum(r["input_tokens"] for r in RUNS) / n,
@@ -83,6 +109,7 @@ table{width:100%;border-collapse:collapse;margin:13px 0;font-size:9.5pt;
 th,td{padding:6px 9px;border-bottom:1px solid #e8e1d8;text-align:left;vertical-align:top}
 th{background:#faf7f3;font-size:8.5pt;text-transform:uppercase;letter-spacing:.05em;color:#6b635a}
 td.n{text-align:right;font-family:ui-monospace,Menlo,monospace}
+tr.diff td{background:#fdf5f1}
 .ev{background:#1d1a17;color:#e8e1d8;border-radius:8px;padding:14px 17px;margin:13px 0;
  font-family:ui-monospace,Menlo,monospace;font-size:8.5pt;line-height:1.5;white-space:pre-wrap;
  overflow-wrap:anywhere}
@@ -197,6 +224,10 @@ specific, and never surfaced by either category of app.</li>
 <li><b>It knows how old your products are.</b> Parsing a pasted receipt gives every
 product a purchase date, which turns two invisible problems visible: oxidised actives,
 and products bought for a different season still in daily use.</li>
+<li><b>It looks ahead, because barrier care is slow.</b> Switching to an occlusive on the
+morning your skin already hurts is too late — it takes a day or two of consistent use to
+do anything. DewPoint computes indoor humidity for the next four days and warns before the
+change arrives, which is the difference between advice and a diagnosis after the fact.</li>
 <li><b>It will not recommend a purchase without the money attached.</b> Every suggestion
 is checked against what the user already owns and has already spent. See below — this
 turned out to be the most opinionated design decision in the project.</li>
@@ -224,10 +255,26 @@ average, and the value already owned that has expired. The model proposes a
 <i>category</i>; the deterministic layer decides whether buying anything is warranted.
 This is the same separation as §3 — the model is never the thing that decides.</p>
 
-<div class=shot><img src="{embed('03-spend-aware.jpg')}" alt="A recommendation showing the use-what-you-own verdict with spend context"></div>
-<p class=cap>Figure 1b. The app declining to recommend a purchase. The user asked for a
-plan; the honest answer was that they already own something that covers it. $182 of
-expired product is shown alongside, because that is the money actually at stake.</p>
+
+
+<h3>How often does this actually change the answer?</h3>
+<p>The premise is only interesting if the outdoor number is misleading often
+enough to matter. Running all {N_CITIES} sample cities through the engine and
+asking which dryness band each reading falls into:</p>
+
+<table>
+<tr><th>City</th><th style="text-align:right">Outdoor</th><th>Band</th>
+<th style="text-align:right">Indoor</th><th>Band</th><th>Building</th><th>Advice</th></tr>
+{BAND_TABLE}
+</table>
+
+<div class=box><h4>{DISAGREE} of {N_CITIES} cities ({DISAGREE_PCT:.0f}%) land in a different advice band</h4>
+<p style="margin:0">Mean gap between the two readings: <b>{MEAN_GAP:.1f} percentage points</b>.
+Largest: <b>{MAX_GAP:.1f}</b>. In Seoul the weather app reads 55% — comfortable — while the
+air indoors is at 11.9%, which is the most damaging band in the scale. In Phoenix the error
+runs the other way: 12% outdoors reads alarming, but the air conditioning brings indoor air
+up to 27%. Acting on the outdoor figure gives you the wrong routine more often than the
+right one.</p></div>
 
 <p><b>Why it matters.</b> The advice changes. At 23.6% indoor humidity the correct action
 is to pause retinoids and acids and seal the barrier. The user's instinct — and the
@@ -333,10 +380,24 @@ niacinamide 10%, retinol 0.5% serum, ceramide moisturizer, SPF 50</code>; wardro
 <p class=cap>Figure 2. Full trace of run <code>efda6726</code>, copied from the live log.
 Note step 5: the model filed sunscreen under "skip" and the invariant check corrected it.</p>
 
-<div class=shot><img src="{embed('01-plan.jpg')}" alt="DewPoint showing the humidity gap and morning brief"></div>
-<p class=cap>Figure 2b. A live run on real Open-Meteo data for New Haven, 25 October 2026.
-The outdoor reading is 49%; the computed indoor figure is 35.2%. The brief, the shelf
-sorting and the outfit are all produced from that one number.</p>
+<div class=shot><img src="{embed('01-plan.jpg')}" alt="DewPoint showing the humidity gauge for Seoul"></div>
+<p class=cap>Figure 2b. A live run on Open-Meteo data for Seoul. Both readings sit on one
+scale so the collapse is visible rather than inferred: 67% outdoors, 49.6% on the skin,
+17.4 points lost to heating. The panel above the gauge names the mechanism — heating here,
+air conditioning in a hot climate.</p>
+
+<div class=shot><img src="{embed('02-outlook.jpg')}" alt="The four-day outlook with a drying warning"></div>
+<p class=cap>Figure 2c. The outlook, and the reason it exists. Seoul is comfortable today at
+51.3% and falls to 17.0% within two days — comfortable to severe. The brief responds with
+<i>"Start tonight: in two days, indoor humidity falls from 51.3% to 17.0%, and barrier takes
+time to build."</i> No weather app would surface this, because the figure it reports never
+moves into that range.</p>
+
+<div class=shot><img src="{embed('04-spend.jpg')}" alt="A replacement verdict with spend context, and the morning and afternoon outfits"></div>
+<p class=cap>Figure 2d. Two things at once. Left: the recommendation resolves to
+<i>replacement, not a new product</i> — the user owns a vitamin C serum, it is five months
+past its three-month window, and that is why it stopped working. Right: the outfit split
+across the day, the afternoon repeating the morning minus a layer.</p>
 
 <h2>4. Tokenomics</h2>
 
@@ -447,7 +508,7 @@ reaches a model, strips what it matches, and shows the user what it removed.</p>
 <p class=cap>Figure 3. Seven injected instructions stripped from a single fake receipt
 while the real line items parse normally. <b>Defence shown working.</b></p>
 
-<div class=shot><img src="{embed('02-injection-blocked.jpg')}" alt="The app showing injected instructions removed from a receipt"></div>
+<div class=shot><img src="{embed('03-injection.jpg')}" alt="The app showing injected instructions removed from a receipt"></div>
 <p class=cap>Figure 3b. The same defence in the interface. The user is told exactly what was
 removed and why, rather than the block happening silently. The plan on the right is
 unaffected, and the $182 expired-product finding is visible at lower left.</p>
