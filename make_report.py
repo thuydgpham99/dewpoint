@@ -773,6 +773,7 @@ bounded at roughly ${(6000/1_000_000)*rates['output']:.5f}, about
 <tr><td>People who guessed the wrong band</td><td class=n>{STUDY_WRONG} of {STUDY_N}</td><td>measured, below</td></tr>
 <tr><td>Mean error in those guesses</td><td class=n>{STUDY_MAE:.1f} pts</td><td>measured, below</td></tr>
 <tr><td>Spread across five people in one city</td><td class=n>{STUDY_SPREAD} pts</td><td>measured, below</td></tr>
+<tr><td>Users who said they would change their routine</td><td class=n><b>0 of 1</b></td><td>measured, Fig. 8</td></tr>
 <tr><td>Cities where outdoor reading implies different advice</td><td class=n>{DISAGREE} of {N_CITIES}</td><td>computed, §3</td></tr>
 </table>
 
@@ -829,6 +830,38 @@ the interface legible and worth a positive comment. It says nothing about whethe
 central insight landed, and nothing about whether they would change their routine. I am not
 going to dress four words up as more than they are.</p>
 
+<h3>The follow-up, which did not go well</h3>
+
+<p>Four words about the interface is not the question that matters. The question that matters
+is whether knowing the number changes what someone does. So they were asked directly:
+<i>"did the number surprise you? would you actually change anything you use?"</i></p>
+
+<div class=shot><img src="{embed('06-user-followup.jpg')}" alt="Follow-up exchange ending in the user saying they would not change anything"></div>
+<p class=cap>Figure 8. The answer: <b>"Nope, i dont change anything."</b></p>
+
+<div class="box warn"><h4>The app failed its most important test with this user</h4>
+<p style="margin:0">A person was shown a number they did not know, about air they are sitting
+in, with a specific explanation of what it means for their skin — and reported no intention to
+change anything. Whatever else this project demonstrates, it did not demonstrate behaviour
+change in the one person given the opportunity.</p></div>
+
+<p><b>Reading it honestly.</b> There are several explanations and I cannot distinguish between
+them from one exchange. They may not have a routine to change, in which case the product has
+no purchase on them and the real error was in who I asked. They may not have read far enough
+for the explanation to land — the session lasted a few minutes on a phone, unprompted. They
+may simply not care about skincare, which is a perfectly reasonable position and one a
+sample of convenience will keep producing. Or the honest possibility: the information is
+interesting and not actionable enough, which would be a flaw in the product rather than in the
+test.</p>
+
+<p><b>What it means for the claims in this section.</b> The $182 of oxidised product is a real
+computation and stands. The {STUDY_WRONG}-of-{STUDY_N} guessing result is a real measurement of
+what people know and stands. But the step from <i>people do not know this</i> to <i>telling
+them improves anything</i> is exactly the step that has not been evidenced, and this exchange
+is the only direct test of it in the project. It came back negative. Section 9 proposes the
+study that would settle it, and this result is the reason that study is necessary rather than
+merely desirable: a single exposure demonstrably did not move the one person who received it.</p>
+
 <p><b>The more useful finding is the part above the quote.</b> Three messages were sent before
 one worked. The first three carried <code>http://127.0.0.1:5001</code>, which resolves to the
 recipient's own device and therefore reaches nothing — a mistake that is obvious in hindsight
@@ -845,9 +878,9 @@ its own labels to "MODER...". A first user on a phone found a defect that no amo
 desktop testing had surfaced.</li>
 </ul>
 
-<p><b>The honest limits of this.</b> One person, four words, and no observation of them using
-it — I was not in the room, so I cannot report where they hesitated, which is the part that
-would actually improve the product. Five people is a convenience sample, not a study. They
+<p><b>The honest limits of this.</b> One person, and no observation of them using it — I was
+not in the room, so I cannot report where they hesitated, which is the part that would
+actually improve the product. Five people is a convenience sample, not a study. They
 were asked once, by someone they know, which invites a guess rather than a considered answer.
 No measurement was taken in their actual rooms — the comparison is against the computed
 figure for the city, so a humidifier or an unusually cold flat would move the true value. The
@@ -891,10 +924,12 @@ build only for time.</li>
 of the gap — moving from 17 °C to 24 °C changes the computed figure by about ten points and
 can change the advice band outright — but a thermostat or a phone's barometer-adjacent
 sensors would remove the guess entirely.</li>
-<li><b>Validate the thresholds.</b> Ten users, four weeks, a daily one-question check-in on
-skin tightness correlated against computed indoor RH. The guessing exercise establishes that
-people do not know the number; this would establish whether knowing it helps, which is the
-harder and more useful question.</li>
+<li><b>Establish whether this changes anything at all.</b> The single direct test of behaviour
+change came back negative (§7, Fig. 8), which makes this the first thing to settle rather than
+the last. Ten users who already follow a routine, four weeks, a daily one-question check-in on
+skin tightness correlated against computed indoor RH, with intention to change recorded at day
+one and day thirty. If a month of accurate daily numbers still moves nobody, the product is
+interesting and not useful, and that is worth finding out early.</li>
 <li><b>Move the Briefer to a non-reasoning model.</b> §5 shows {reason_pct:.0f}% of output
 tokens are internal; the Briefer is a rewriting task that does not need them.</li>
 <li><b>Seasonal pre-emption.</b> The dated inventory makes it possible to warn a user in
