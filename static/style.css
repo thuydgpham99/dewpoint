@@ -608,3 +608,22 @@ header.top{padding:66px 0 38px}
   .hero-sub{font-size:16px}
   .proof{flex-direction:column;align-items:flex-start;gap:7px;border-radius:var(--r)}
 }
+
+/* ---- browse, collapsed by default ----
+   The suggestion list exists to help someone fill the field. At full height it
+   was several times taller than the field itself, so it now hides behind a
+   summary and the input offers the same names as type-ahead. */
+.browse{margin-top:11px}
+.browse summary{list-style:none;cursor:pointer;font-size:12px;font-weight:600;
+  color:var(--ink-3);outline:none;display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px;border:1px dashed var(--line);border-radius:999px;
+  transition:all .17s}
+.browse summary::-webkit-details-marker{display:none}
+.browse summary::before{content:'+';font-size:14px;font-weight:700;color:var(--accent)}
+.browse[open] summary::before{content:'\2013'}
+.browse summary:hover{border-style:solid;border-color:var(--accent);color:var(--accent-2);
+  background:var(--p-rose)}
+.browse summary:focus-visible{box-shadow:0 0 0 3px var(--accent-soft)}
+.browse .quick{margin-top:13px;max-height:230px;overflow-y:auto;padding-right:4px}
+.browse .quick::-webkit-scrollbar{width:5px}
+.browse .quick::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}

@@ -59,19 +59,28 @@
       <p class="hint" style="margin:-3px 0 7px">The products you actually own. DewPoint only
       recommends from this list — it never invents a product you don't have.</p>
       <div class="chips" id="shelfChips">
-        <input type="text" id="shelfInput" placeholder="Type a product, press Enter">
+        <input type="text" id="shelfInput" list="shelfList" autocomplete="off"
+               placeholder="Type a product, press Enter">
+        <datalist id="shelfList"></datalist>
       </div>
-      <div class="quick" id="shelfQuick"></div>
-      <div class="hint">Or paste a receipt below and it fills itself.</div>
+      <details class="browse"><summary id="shelfBrowse">Browse common products</summary>
+        <div class="quick" id="shelfQuick"></div>
+      </details>
+      <div class="hint">Have a receipt? <b>Your room</b> below can read it and date every
+      product for you.</div>
 
       <label>Your wardrobe</label>
       <p class="hint" style="margin:-3px 0 7px">Clothes you might wear today. Used to build an
       outfit from what you own — and to catch conflicts, like balm staining silk or sunscreen
       yellowing white cotton.</p>
       <div class="chips" id="wardrobeChips">
-        <input type="text" id="wardrobeInput" placeholder="Type a piece, press Enter">
+        <input type="text" id="wardrobeInput" list="wardrobeList" autocomplete="off"
+               placeholder="Type a piece, press Enter">
+        <datalist id="wardrobeList"></datalist>
       </div>
-      <div class="quick" id="wardrobeQuick"></div>
+      <details class="browse"><summary id="wardrobeBrowse">Browse common pieces</summary>
+        <div class="quick" id="wardrobeQuick"></div>
+      </details>
 
       <button class="go" id="go">Plan my day</button>
     </div>
@@ -240,6 +249,22 @@ function drawQuick(which) {
   const q = document.getElementById(which + 'Quick');
   q.innerHTML = '';
   const groups = SUGGEST_GROUPS[which];
+
+  // keep the type-ahead list in step with what is already on the shelf
+  const dl = document.getElementById(which + 'List');
+  if (dl) {
+    dl.innerHTML = SUGGEST[which]
+      .filter(v => !CHIPS[which].includes(v))
+      .map(v => `<option value="${esc(v)}">`).join('');
+  }
+
+  const remaining = SUGGEST[which].filter(v => !CHIPS[which].includes(v)).length;
+  const sum = document.getElementById(which + 'Browse');
+  if (sum) {
+    sum.textContent = which === 'shelf'
+      ? `Browse ${remaining} common products`
+      : `Browse ${remaining} common pieces`;
+  }
 
   Object.keys(groups).forEach(name => {
     const left = groups[name].filter(v => !CHIPS[which].includes(v));
