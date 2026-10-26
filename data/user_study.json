@@ -1,0 +1,16 @@
+{
+  "question": "What percent humidity do you think the air in your room is right now?",
+  "method": "Asked by text message, no context given, answers taken as sent. Convenience sample of five people.",
+  "asked_on": "2026-10-25",
+  "assumed_location": "New Haven, CT",
+  "guesses": [
+    60,
+    70,
+    20,
+    40,
+    10
+  ],
+  "actual_indoor_rh": 29.1,
+  "outdoor_rh": 61,
+  "note": "All five respondents were in New Haven. Compared against the computed indoor figure for New Haven at the time of asking."
+}

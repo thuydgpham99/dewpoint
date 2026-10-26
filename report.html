@@ -59,7 +59,7 @@ code{background:#f3ede6;padding:1px 5px;border-radius:3px;font-size:9pt;
 <b>Date:</b> 25 October 2026<br>
 <b>Repository:</b> <a href="https://github.com/thuydgpham99/dewpoint">github.com/thuydgpham99/dewpoint</a><br>
 <b>Model:</b> gpt-5.6-luna via Portkey &nbsp;·&nbsp;
-<b>Runs measured for this report:</b> 49<br><br>
+<b>Runs measured for this report:</b> 50<br><br>
 DewPoint derives the relative humidity your skin actually sits in — indoor air, not the
 outdoor figure your weather app reports — and uses that one number to plan both your
 skincare routine and what you wear.
@@ -316,22 +316,22 @@ outfit split across the day, the afternoon repeating the morning minus a layer.<
 
 <p>Every figure in this section is read from the provider's own <code>usage</code> field
 and logged to <code>runs/usage.jsonl</code> by <code>meter.py</code>. Nothing is estimated.
-Measured across <b>49 runs</b>.</p>
+Measured across <b>50 runs</b>.</p>
 
 <table>
 <tr><th>Measure</th><th>Per run (mean)</th></tr>
-<tr><td>Input tokens</td><td class=n>1,776</td></tr>
+<tr><td>Input tokens</td><td class=n>1,778</td></tr>
 <tr><td>Cached input tokens</td><td class=n>0</td></tr>
-<tr><td>Output tokens (visible + reasoning)</td><td class=n>1,232</td></tr>
-<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>804 (65%)</td></tr>
-<tr><td><b>Total tokens</b></td><td class=n><b>3,008</b></td></tr>
+<tr><td>Output tokens (visible + reasoning)</td><td class=n>1,236</td></tr>
+<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>808 (65%)</td></tr>
+<tr><td><b>Total tokens</b></td><td class=n><b>3,014</b></td></tr>
 <tr><td><b>Cost per run</b></td><td class=n><b>$0.00101</b></td></tr>
 </table>
 
 <h3>The finding that matters</h3>
 <div class="box warn"><h4>65% of output tokens are never shown to the user</h4>
 <p style="margin:0">This model reasons before answering, and reasoning tokens bill at the
-output rate. On a typical run 804 of 1,232 output tokens
+output rate. On a typical run 808 of 1,236 output tokens
 were internal. The visible answer — the part the user reads — is roughly a third of what
 is paid for. Any cost model built on visible output length would understate the bill by
 about 3×.</p></div>
@@ -344,18 +344,18 @@ $0.15/1M input, $0.075/1M cached, $0.6/1M output.</p>
 <table>
 <tr><th>Scale</th><th>Runs / month</th><th>Cost / month</th><th>Cost / year</th></tr>
 <tr><td>One user</td><td class=n>20</td>
-<td class=n>$0.0201</td>
+<td class=n>$0.0202</td>
 <td class=n>$0.24</td></tr>
 <tr><td>100 users</td><td class=n>2,000</td>
-<td class=n>$2.01</td>
-<td class=n>$24.13</td></tr>
+<td class=n>$2.02</td>
+<td class=n>$24.20</td></tr>
 <tr><td>10,000 users</td><td class=n>200,000</td>
-<td class=n>$201.07</td>
-<td class=n>$2,412.83</td></tr>
+<td class=n>$201.65</td>
+<td class=n>$2,419.78</td></tr>
 </table>
 
 <p>At 10,000 users the model bill is roughly
-<b>$2,413 per year</b> — about
+<b>$2,420 per year</b> — about
 <b>$0.24 per user per year</b>. Weather costs nothing
 (Open-Meteo, no key). The deterministic engine costs nothing. Inference is effectively
 the entire marginal cost of the product.</p>
@@ -498,17 +498,57 @@ bounded at roughly $0.00360, about
 <tr><td>Wasted product value identified, one shelf</td><td class=n>$182.00</td><td>measured, Fig. 6</td></tr>
 <tr><td>Share of shelf value past its window</td><td class=n>56%</td><td>measured, Fig. 6</td></tr>
 <tr><td>Cost to run DewPoint, per user per year</td><td class=n>$0.24</td><td>measured, §4</td></tr>
-<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~754×</td><td>derived</td></tr>
+<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~752×</td><td>derived</td></tr>
 <tr><td>Time to a decision</td><td class=n>~9 s</td><td>measured, §4</td></tr>
+<tr><td>People who guessed the wrong band</td><td class=n>4 of 5</td><td>measured, below</td></tr>
+<tr><td>Mean error in those guesses</td><td class=n>22.2 pts</td><td>measured, below</td></tr>
+<tr><td>Spread across five people in one city</td><td class=n>60 pts</td><td>measured, below</td></tr>
+<tr><td>Cities where outdoor reading implies different advice</td><td class=n>9 of 16</td><td>computed, §2</td></tr>
 </table>
 
-<p><b>The honest limit on this section.</b> The $182 figure is a real computation on a real
-product set, but it is one shelf, and the user trial described below is a single session.
-This is suggestive, not established. A proper impact claim needs a cohort, a control, and a
-follow-up at 30 days, which §8 describes.</p>
+<p><b>The honest limit on the money figure.</b> The $182 is a real computation on a real
+product set, but it is one shelf. A proper claim about waste across a population needs a
+cohort and a follow-up at 30 days, which §8 describes.</p>
 
-<div class=ph>[ USER FEEDBACK — one or two sentences from the person who tried it, with what
-they changed afterwards ]</div>
+<h3>Asking five people to guess</h3>
+
+<p>The product rests on a claim about what people do not know. That is testable, so I tested
+it. Five people in New Haven were sent one question by text, with no context and no hint
+that a right answer existed:</p>
+
+<p class=lede>"What percent humidity do you think the air in your room is right now?"</p>
+
+<p>At the time of asking, the outdoor reading for New Haven was <b>61%</b> and the
+computed indoor figure was <b>29.1%</b> — the <b>high</b> band.</p>
+
+<table>
+<tr><th style="text-align:right">Guess</th><th>Band it implies</th>
+<th style="text-align:right">Error</th><th>Routine it would produce</th></tr>
+<tr class=diff><td class=n>60%</td><td>humid</td><td class=n>+30.9</td><td><b>wrong band</b></td></tr><tr class=diff><td class=n>70%</td><td>humid</td><td class=n>+40.9</td><td><b>wrong band</b></td></tr><tr><td class=n>20%</td><td>high</td><td class=n>-9.1</td><td>same band</td></tr><tr class=diff><td class=n>40%</td><td>comfortable</td><td class=n>+10.9</td><td><b>wrong band</b></td></tr><tr class=diff><td class=n>10%</td><td>severe</td><td class=n>-19.1</td><td><b>wrong band</b></td></tr>
+</table>
+
+<div class="box warn"><h4>4 of 5 would have followed the wrong routine</h4>
+<p style="margin:0">Mean absolute error <b>22.2 percentage points</b> against a true
+value of 29.1%. Only one answer landed in the correct band. The more telling number is
+the <b>60-point spread</b> — from 10% to 70% — among five people sitting in
+substantially the same air. That is not a population that is slightly miscalibrated. It is a
+population with no mental model at all, which is what you would expect for a quantity nobody
+has ever been shown.</p></div>
+
+<p><b>What the errors would have cost them.</b> The two who guessed 60% and 70% would have
+read their air as humid and reached for a gel moisturiser while skipping occlusives — the
+exact inversion of what 29.1% calls for. The one who guessed 40% would have read
+conditions as comfortable and carried on with acids and a retinoid, which at this dryness is
+the specific combination that drives the flaking-then-exfoliating cycle described in §1. Only
+the 10% guess erred toward caution.</p>
+
+<p><b>The honest limits of this.</b> Five people is a convenience sample, not a study. They
+were asked once, by someone they know, which invites a guess rather than a considered answer.
+No measurement was taken in their actual rooms — the comparison is against the computed
+figure for the city, so a humidifier or an unusually cold flat would move the true value. The
+result is strong enough to motivate the product and far too small to prove anything about a
+population. What it does establish, cheaply, is that the number this app computes is not one
+people already carry in their heads.</p>
 
 <h2>7. Limits</h2>
 <ul>
@@ -524,7 +564,12 @@ defensible, not validated.</li>
 emails vary enormously; coverage is unknown.</li>
 <li><b>Purchase date is not opening date.</b> Period-after-opening starts when a product is
 opened. DewPoint uses the purchase date as a proxy, which is conservative but imprecise.</li>
-<li><b>Single-user evidence.</b> See §6.</li>
+<li><b>Five people is not a study.</b> The guessing exercise in §6 is a convenience
+sample, asked once, by someone they know. It is strong enough to motivate the product and
+far too small to support a claim about any population.</li>
+<li><b>Nobody has used it for a week.</b> The guessing exercise tests whether the number is
+known. It does not test whether acting on it improves anyone's skin, which is the claim
+that would actually matter and the one §8 proposes measuring.</li>
 </ul>
 
 <h2>8. Next steps</h2>
@@ -534,9 +579,10 @@ A vision model reading a shelf photo removes that friction entirely, and was cut
 build only for time.</li>
 <li><b>Ask for indoor temperature once</b>, or read it from a smart thermostat. This is the
 largest single source of error and the cheapest to fix.</li>
-<li><b>Validate the thresholds.</b> Ten users, four weeks, daily one-question check-in on
-skin tightness, correlated against computed indoor RH. That turns §6 from suggestive into
-evidence.</li>
+<li><b>Validate the thresholds.</b> Ten users, four weeks, a daily one-question check-in on
+skin tightness correlated against computed indoor RH. The guessing exercise establishes that
+people do not know the number; this would establish whether knowing it helps, which is the
+harder and more useful question.</li>
 <li><b>Move the Briefer to a non-reasoning model.</b> §4 shows 65% of output
 tokens are internal; the Briefer is a rewriting task that does not need them.</li>
 <li><b>Seasonal pre-emption.</b> The dated inventory makes it possible to warn a user in

@@ -40,6 +40,33 @@ for _name, _w in _fx.items():
     _band_rows.append((_name, _a["outdoor_rh"], _ob, _a["indoor_rh"], _a["band"],
                        _a["mode"], _same))
 _band_rows.sort(key=lambda r: r[3])
+
+# ---- the user study ----------------------------------------------------
+_study = json.loads((HERE / "data/user_study.json").read_text())
+STUDY_GUESSES = _study["guesses"]
+STUDY_ACTUAL = _study["actual_indoor_rh"]
+STUDY_OUTDOOR = _study["outdoor_rh"]
+_actual_band, _ = dryness_band(STUDY_ACTUAL)
+STUDY_BAND = _actual_band
+_srows, _serrs, _right = [], [], 0
+for _g in STUDY_GUESSES:
+    _b, _ = dryness_band(_g)
+    _e = _g - STUDY_ACTUAL
+    _serrs.append(abs(_e))
+    _ok = _b == _actual_band
+    if _ok:
+        _right += 1
+    _srows.append((_g, _b, _e, _ok))
+STUDY_TABLE = "".join(
+    f'<tr{"" if ok else " class=diff"}><td class=n>{g}%</td><td>{b}</td>'
+    f'<td class=n>{e:+.1f}</td><td>{"same band" if ok else "<b>wrong band</b>"}</td></tr>'
+    for g, b, e, ok in _srows)
+STUDY_N = len(STUDY_GUESSES)
+STUDY_MAE = sum(_serrs) / STUDY_N
+STUDY_MEAN = sum(STUDY_GUESSES) / STUDY_N
+STUDY_SPREAD = max(STUDY_GUESSES) - min(STUDY_GUESSES)
+STUDY_RIGHT = _right
+STUDY_WRONG = STUDY_N - _right
 BAND_TABLE = "".join(
     f'<tr{"" if same else " class=diff"}><td>{n}</td><td class=n>{orh:.0f}%</td>'
     f'<td>{ob}</td><td class=n>{irh:.1f}%</td><td>{ib}</td><td>{mode}</td>'
@@ -591,15 +618,55 @@ bounded at roughly ${(6000/1_000_000)*rates['output']:.5f}, about
 <tr><td>Cost to run DewPoint, per user per year</td><td class=n>${avg['cost']*RUNS_PER_USER_MONTH*12:.2f}</td><td>measured, §4</td></tr>
 <tr><td>Ratio of value surfaced to cost of running</td><td class=n>~{182/(avg['cost']*RUNS_PER_USER_MONTH*12):,.0f}×</td><td>derived</td></tr>
 <tr><td>Time to a decision</td><td class=n>~9 s</td><td>measured, §4</td></tr>
+<tr><td>People who guessed the wrong band</td><td class=n>{STUDY_WRONG} of {STUDY_N}</td><td>measured, below</td></tr>
+<tr><td>Mean error in those guesses</td><td class=n>{STUDY_MAE:.1f} pts</td><td>measured, below</td></tr>
+<tr><td>Spread across five people in one city</td><td class=n>{STUDY_SPREAD} pts</td><td>measured, below</td></tr>
+<tr><td>Cities where outdoor reading implies different advice</td><td class=n>{DISAGREE} of {N_CITIES}</td><td>computed, §2</td></tr>
 </table>
 
-<p><b>The honest limit on this section.</b> The $182 figure is a real computation on a real
-product set, but it is one shelf, and the user trial described below is a single session.
-This is suggestive, not established. A proper impact claim needs a cohort, a control, and a
-follow-up at 30 days, which §8 describes.</p>
+<p><b>The honest limit on the money figure.</b> The $182 is a real computation on a real
+product set, but it is one shelf. A proper claim about waste across a population needs a
+cohort and a follow-up at 30 days, which §8 describes.</p>
 
-<div class=ph>[ USER FEEDBACK — one or two sentences from the person who tried it, with what
-they changed afterwards ]</div>
+<h3>Asking five people to guess</h3>
+
+<p>The product rests on a claim about what people do not know. That is testable, so I tested
+it. Five people in New Haven were sent one question by text, with no context and no hint
+that a right answer existed:</p>
+
+<p class=lede>"What percent humidity do you think the air in your room is right now?"</p>
+
+<p>At the time of asking, the outdoor reading for New Haven was <b>{STUDY_OUTDOOR}%</b> and the
+computed indoor figure was <b>{STUDY_ACTUAL}%</b> — the <b>{STUDY_BAND}</b> band.</p>
+
+<table>
+<tr><th style="text-align:right">Guess</th><th>Band it implies</th>
+<th style="text-align:right">Error</th><th>Routine it would produce</th></tr>
+{STUDY_TABLE}
+</table>
+
+<div class="box warn"><h4>{STUDY_WRONG} of {STUDY_N} would have followed the wrong routine</h4>
+<p style="margin:0">Mean absolute error <b>{STUDY_MAE:.1f} percentage points</b> against a true
+value of {STUDY_ACTUAL}%. Only one answer landed in the correct band. The more telling number is
+the <b>{STUDY_SPREAD}-point spread</b> — from 10% to 70% — among five people sitting in
+substantially the same air. That is not a population that is slightly miscalibrated. It is a
+population with no mental model at all, which is what you would expect for a quantity nobody
+has ever been shown.</p></div>
+
+<p><b>What the errors would have cost them.</b> The two who guessed 60% and 70% would have
+read their air as humid and reached for a gel moisturiser while skipping occlusives — the
+exact inversion of what {STUDY_ACTUAL}% calls for. The one who guessed 40% would have read
+conditions as comfortable and carried on with acids and a retinoid, which at this dryness is
+the specific combination that drives the flaking-then-exfoliating cycle described in §1. Only
+the 10% guess erred toward caution.</p>
+
+<p><b>The honest limits of this.</b> Five people is a convenience sample, not a study. They
+were asked once, by someone they know, which invites a guess rather than a considered answer.
+No measurement was taken in their actual rooms — the comparison is against the computed
+figure for the city, so a humidifier or an unusually cold flat would move the true value. The
+result is strong enough to motivate the product and far too small to prove anything about a
+population. What it does establish, cheaply, is that the number this app computes is not one
+people already carry in their heads.</p>
 
 <h2>7. Limits</h2>
 <ul>
@@ -615,7 +682,12 @@ defensible, not validated.</li>
 emails vary enormously; coverage is unknown.</li>
 <li><b>Purchase date is not opening date.</b> Period-after-opening starts when a product is
 opened. DewPoint uses the purchase date as a proxy, which is conservative but imprecise.</li>
-<li><b>Single-user evidence.</b> See §6.</li>
+<li><b>Five people is not a study.</b> The guessing exercise in §6 is a convenience
+sample, asked once, by someone they know. It is strong enough to motivate the product and
+far too small to support a claim about any population.</li>
+<li><b>Nobody has used it for a week.</b> The guessing exercise tests whether the number is
+known. It does not test whether acting on it improves anyone's skin, which is the claim
+that would actually matter and the one §8 proposes measuring.</li>
 </ul>
 
 <h2>8. Next steps</h2>
@@ -625,9 +697,10 @@ A vision model reading a shelf photo removes that friction entirely, and was cut
 build only for time.</li>
 <li><b>Ask for indoor temperature once</b>, or read it from a smart thermostat. This is the
 largest single source of error and the cheapest to fix.</li>
-<li><b>Validate the thresholds.</b> Ten users, four weeks, daily one-question check-in on
-skin tightness, correlated against computed indoor RH. That turns §6 from suggestive into
-evidence.</li>
+<li><b>Validate the thresholds.</b> Ten users, four weeks, a daily one-question check-in on
+skin tightness correlated against computed indoor RH. The guessing exercise establishes that
+people do not know the number; this would establish whether knowing it helps, which is the
+harder and more useful question.</li>
 <li><b>Move the Briefer to a non-reasoning model.</b> §4 shows {reason_pct:.0f}% of output
 tokens are internal; the Briefer is a rewriting task that does not need them.</li>
 <li><b>Seasonal pre-emption.</b> The dated inventory makes it possible to warn a user in
