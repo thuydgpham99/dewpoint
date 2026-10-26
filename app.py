@@ -192,6 +192,11 @@ if __name__ == "__main__":
 
     port = _free_port(int(os.getenv("PORT", "5001")))
 
+    # Default to loopback. HOST=0.0.0.0 opens the app to the local network so
+    # someone else on the same wifi can try it -- useful for a user test, and
+    # worth turning off again afterwards, since the server holds an API key.
+    host = os.getenv("HOST", "127.0.0.1")
+
     # The reloader is off by default. It is convenient while developing but it
     # can leave a half-dead process after an edit, and a grader only needs the
     # server to stay up. DEWPOINT_DEBUG=1 turns it back on.
@@ -202,6 +207,17 @@ if __name__ == "__main__":
     print(f"  key loaded : {bool(config.PORTKEY_API_KEY)}")
     if not config.PORTKEY_API_KEY:
         print("  no key found -> the app still runs, using its deterministic engine")
-    print(f"\n  ready at  http://127.0.0.1:{port}\n")
+    print(f"\n  ready at  http://127.0.0.1:{port}")
+    if host == "0.0.0.0":
+        import socket
+        try:
+            probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            probe.connect(("8.8.8.8", 80))
+            print(f"  on this wifi  http://{probe.getsockname()[0]}:{port}")
+            probe.close()
+        except Exception:
+            pass
+        print("  open to the local network -- stop the server when you are done")
+    print()
 
-    app.run(debug=debug, port=port, use_reloader=debug, threaded=True)
+    app.run(debug=debug, host=host, port=port, use_reloader=debug, threaded=True)
