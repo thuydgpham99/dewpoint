@@ -627,3 +627,41 @@ header.top{padding:66px 0 38px}
 .browse .quick{margin-top:13px;max-height:230px;overflow-y:auto;padding-right:4px}
 .browse .quick::-webkit-scrollbar{width:5px}
 .browse .quick::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}
+
+/* ---- phone and tablet ----
+   Checked on a 375pt viewport: the metric strip was reserving desktop height
+   and leaving dead space, and the band row was truncating its own labels. */
+@media(max-width:760px){
+  .wrap{padding:0 18px 70px}
+  header.top{padding:40px 0 26px}
+
+  .metrics{flex-wrap:wrap}
+  .metrics div{flex:1 1 33%;min-height:0;padding:12px 8px;gap:3px;
+    justify-content:center;border-bottom:1px solid var(--line-2)}
+  .metrics div:nth-child(3n){border-right:0}
+  .metrics .v{font-size:17px;flex:none}
+  .metrics .k{font-size:8px;letter-spacing:.09em}
+
+  .gauge-wrap{padding:22px 18px 20px}
+  .gauge{margin-top:92px}
+  .mk.indoor .flag .v{font-size:32px;letter-spacing:-1.5px}
+  .mk.outdoor .flag .v{font-size:16px}
+  .bandrow{font-size:7.5px;letter-spacing:.04em;gap:2px;margin-top:34px}
+  .drop-lbl{font-size:10px}
+
+  .card{padding:22px 20px}
+  .brief{padding:22px 20px;font-size:15.5px}
+  .outlook{padding:20px 18px}
+  .odetail-inner{padding:14px 15px}
+  .odk{width:62px}
+  .suggest{padding:20px 18px}
+  .spendbar{flex-wrap:wrap}
+  .spendbar div{flex:1 1 100%;border-right:0;border-bottom:1px solid var(--line-2)}
+  .spendbar div:last-child{border-bottom:0}
+
+  /* comfortable tap targets */
+  .row summary{padding:16px 2px}
+  .chip{padding:7px 9px 7px 14px;font-size:13.5px}
+  .chip button{font-size:18px;padding:0 4px}
+  .samples button,.srow button{padding:7px 13px;font-size:12.5px}
+}
