@@ -812,7 +812,42 @@ conditions as comfortable and carried on with acids and a retinoid, which at thi
 the specific combination that drives the flaking-then-exfoliating cycle described in §2. Only
 the 10% guess erred toward caution.</p>
 
-<p><b>The honest limits of this.</b> Five people is a convenience sample, not a study. They
+<h3>Someone actually using it</h3>
+
+<p>Guessing a number tests whether people know the figure. It does not test whether the app
+is usable, so one of the five was asked to open it on their own phone and say what they
+thought. The exchange, with the phone number cropped out:</p>
+
+<div class=shot><img src="{embed('05-user-trial.jpg')}" alt="Message thread showing the app being opened on a phone"></div>
+<p class=cap>Figure 7. A first user reaching the app on an iPhone over the local network,
+25 October 2026.</p>
+
+<p><b>What this supports, and what it does not.</b> The verdict was
+<i>"Good. The web loooks good."</i> That is genuine evidence on one row and no evidence at
+all on the others: it confirms a first-time viewer, on a phone, with no explanation, found
+the interface legible and worth a positive comment. It says nothing about whether the
+central insight landed, and nothing about whether they would change their routine. I am not
+going to dress four words up as more than they are.</p>
+
+<p><b>The more useful finding is the part above the quote.</b> Three messages were sent before
+one worked. The first three carried <code>http://127.0.0.1:5001</code>, which resolves to the
+recipient's own device and therefore reaches nothing — a mistake that is obvious in hindsight
+and was not obvious at the time. Only the fourth, on the machine's local network address,
+opened. Two things follow:</p>
+<ul>
+<li><b>A locally hosted app has a real distribution cost</b> that does not appear in any cost
+model. The marginal inference cost is $0.001; the marginal cost of getting a stranger to see
+it at all was four messages and a shared wifi network. Section 9 treats hosting as a
+convenience; this is the argument that it is closer to a requirement.</li>
+<li><b>It prompted a layout pass that should have happened earlier.</b> Checking the app at
+375pt found the metric strip reserving desktop row height and the dryness band row truncating
+its own labels to "MODER...". A first user on a phone found a defect that no amount of
+desktop testing had surfaced.</li>
+</ul>
+
+<p><b>The honest limits of this.</b> One person, four words, and no observation of them using
+it — I was not in the room, so I cannot report where they hesitated, which is the part that
+would actually improve the product. Five people is a convenience sample, not a study. They
 were asked once, by someone they know, which invites a guess rather than a considered answer.
 No measurement was taken in their actual rooms — the comparison is against the computed
 figure for the city, so a humidifier or an unusually cold flat would move the true value. The
