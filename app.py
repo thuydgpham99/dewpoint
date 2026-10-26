@@ -15,6 +15,13 @@ from weather import FIXTURES, fetch
 
 app = Flask(__name__)
 
+# Flask only re-reads templates when debug is on, and debug is off by default
+# here so the server stays up for a grader. Without this, editing a template
+# silently does nothing until the process restarts -- which cost me twenty
+# minutes of chasing a bug that was not there.
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.jinja_env.auto_reload = True
+
 
 def grouped_samples():
     """Sample cities grouped by region, for the picker."""

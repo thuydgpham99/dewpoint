@@ -393,11 +393,13 @@ air conditioning in a hot climate.</p>
 time to build."</i> No weather app would surface this, because the figure it reports never
 moves into that range.</p>
 
-<div class=shot><img src="{embed('04-spend.jpg')}" alt="A replacement verdict with spend context, and the morning and afternoon outfits"></div>
-<p class=cap>Figure 2d. Two things at once. Left: the recommendation resolves to
-<i>replacement, not a new product</i> — the user owns a vitamin C serum, it is five months
-past its three-month window, and that is why it stopped working. Right: the outfit split
-across the day, the afternoon repeating the morning minus a layer.</p>
+<div class=shot><img src="{embed('04-rows.jpg')}" alt="Shelf and outfit lists with two rows expanded"></div>
+<p class=cap>Figure 2d. Progressive disclosure. Each row shows only the product or garment
+by default, with its AM/PM/SKIP verdict; the reasoning appears on tap. An earlier build
+printed every justification at once, which turned the answer to a simple question into a
+page of prose. Two rows are expanded here. Built on native <code>&lt;details&gt;</code>, so
+it is keyboard operable and readable by a screen reader without any JavaScript. Right: the
+outfit split across the day, the afternoon repeating the morning minus a layer.</p>
 
 <h2>4. Tokenomics</h2>
 

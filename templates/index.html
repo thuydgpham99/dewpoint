@@ -446,29 +446,46 @@ function render(d) {
   h += suggestion(d.shelf.gap, d.purchase_context);
 
   h += '<div class="cols cols-wide rv">';
-  h += '<div class="card"><h2>Your shelf tonight</h2><ul class="items">';
-  (d.shelf.use||[]).forEach(i=>h+=`<li><span class="n">${esc(i.product)}</span><span class="tag use">${esc(i.when||'use')}</span><span class="w">${esc(i.why)}</span></li>`);
-  (d.shelf.skip||[]).forEach(i=>h+=`<li><span class="n">${esc(i.product)}</span><span class="tag skip">skip</span><span class="w">${esc(i.why)}</span></li>`);
-  h += '</ul>';
+  const row = (name, tagText, tagClass, why) => `
+    <details class="row">
+      <summary>
+        <span class="rn">${esc(name)}</span>
+        <span class="tag ${tagClass}">${esc(tagText)}</span>
+        <span class="chev" aria-hidden="true"></span>
+      </summary>
+      <div class="rwhy">${esc(why || 'No reason given.')}</div>
+    </details>`;
+
+  h += '<div class="card"><h2>Your shelf tonight</h2>'
+     + '<p class="rhint">Tap any product for the reason.</p><div class="rows">';
+  (d.shelf.use||[]).forEach(i => h += row(i.product, i.when || 'use', 'use', i.why));
+  (d.shelf.skip||[]).forEach(i => h += row(i.product, 'skip', 'skip', i.why));
+  h += '</div>';
   h += '</div>';
 
   const sw = a.swing || {};
-  const pieces = list => (list||[]).map(i =>
-    `<li><span class="n">${esc(i.piece)}</span><span class="w">${esc(i.fabric)} — ${esc(i.why)}</span></li>`
-  ).join('') || '<li class="w">—</li>';
+  const pieces = list => (list||[]).map(i => `
+    <details class="row">
+      <summary>
+        <span class="rn">${esc(i.piece)}</span>
+        <span class="chev" aria-hidden="true"></span>
+      </summary>
+      <div class="rwhy"><b>${esc(i.fabric)}</b> — ${esc(i.why)}</div>
+    </details>`).join('') || '<p class="muted">—</p>';
 
   h += `<div class="card"><h2>What to wear</h2>
+    <p class="rhint">Tap any piece for the fabric and why.</p>
     <div class="daysplit">
       <div class="half">
         <div class="hhead"><span class="when">Morning</span>
           <span class="deg">${sw.morning ? sw.morning.temp_c + '°' : ''}</span></div>
-        <ul class="items">${pieces(d.style.morning)}</ul>
+        <div class="rows">${pieces(d.style.morning)}</div>
       </div>
       <div class="arrowcol" aria-hidden="true">→</div>
       <div class="half">
         <div class="hhead"><span class="when">Afternoon</span>
           <span class="deg">${sw.afternoon ? sw.afternoon.temp_c + '°' : ''}</span></div>
-        <ul class="items">${pieces(d.style.afternoon)}</ul>
+        <div class="rows">${pieces(d.style.afternoon)}</div>
       </div>
     </div>`;
   if (d.style.transition) h += `<p class="transition">${esc(d.style.transition)}</p>`;
