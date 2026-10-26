@@ -933,7 +933,13 @@ October that the gel moisturiser they bought in July will be wrong in three week
 the barrier damage, not after.</li>
 </ol>
 
-<div class=ft>DewPoint · MGT 409 final project · Jennifer Pham · {date.today():%d %B %Y}<br>
+<div class=ft>
+<b style="color:#1d1a17">Repository (public):
+<a href="https://github.com/thuydgpham99/dewpoint">https://github.com/thuydgpham99/dewpoint</a></b><br>
+Clone it, then <code>pip install -r requirements.txt</code> and <code>python3 app.py</code>.
+Place <code>.env</code> in the repo folder or one level above. <code>python3 selftest.py</code>
+runs 18 checks.<br><br>
+DewPoint · MGT 409 final project · Jennifer Pham · {date.today():%d %B %Y}<br>
 Weather from Open-Meteo. Model gpt-5.6-luna via Portkey. All token counts measured from
 provider usage fields and logged to <code>runs/usage.jsonl</code>.<br>
 Cosmetic guidance only. Not medical advice.</div>

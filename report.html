@@ -56,7 +56,7 @@ code{background:#f3ede6;padding:1px 5px;border-radius:3px;font-size:9pt;
 
 <div class=meta>
 <b>Author:</b> Jennifer Pham &nbsp;·&nbsp; <b>Course:</b> MGT 409 &nbsp;·&nbsp;
-<b>Date:</b> 25 October 2026<br>
+<b>Date:</b> 26 October 2026<br>
 <b>Repository (public — clone this to run the app):</b><br>
 <a href="https://github.com/thuydgpham99/dewpoint" style="font-size:12pt;font-weight:600">https://github.com/thuydgpham99/dewpoint</a><br>
 <b>App link:</b> none — DewPoint runs locally. <code>pip install -r requirements.txt</code>
@@ -65,7 +65,7 @@ the <code>.env</code> one level above, dependencies installed in 4 seconds.<br>
 <b>Self-check:</b> <code>python3 selftest.py</code> runs 18 checks, including a live model
 call, and should report 18/18.<br>
 <b>Model:</b> gpt-5.6-luna via Portkey &nbsp;·&nbsp;
-<b>Runs measured for this report:</b> 77<br><br>
+<b>Runs measured for this report:</b> 78<br><br>
 DewPoint derives the relative humidity your skin actually sits in — indoor air, not the
 outdoor figure your weather app reports — and uses that one number to plan both your
 skincare routine and what you wear.
@@ -408,22 +408,22 @@ outfit split across the day, the afternoon repeating the morning minus a layer.<
 
 <p>Every figure in this section is read from the provider's own <code>usage</code> field
 and logged to <code>runs/usage.jsonl</code> by <code>meter.py</code>. Nothing is estimated.
-Measured across <b>77 runs</b>.</p>
+Measured across <b>78 runs</b>.</p>
 
 <table>
 <tr><th>Measure</th><th>Per run (mean)</th></tr>
-<tr><td>Input tokens</td><td class=n>1,816</td></tr>
+<tr><td>Input tokens</td><td class=n>1,818</td></tr>
 <tr><td>Cached input tokens</td><td class=n>0</td></tr>
-<tr><td>Output tokens (visible + reasoning)</td><td class=n>1,411</td></tr>
-<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>963 (68%)</td></tr>
-<tr><td><b>Total tokens</b></td><td class=n><b>3,227</b></td></tr>
+<tr><td>Output tokens (visible + reasoning)</td><td class=n>1,406</td></tr>
+<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>959 (68%)</td></tr>
+<tr><td><b>Total tokens</b></td><td class=n><b>3,224</b></td></tr>
 <tr><td><b>Cost per run</b></td><td class=n><b>$0.00112</b></td></tr>
 </table>
 
 <h3>The finding that matters</h3>
 <div class="box warn"><h4>68% of output tokens are never shown to the user</h4>
 <p style="margin:0">This model reasons before answering, and reasoning tokens bill at the
-output rate. On a typical run 963 of 1,411 output tokens
+output rate. On a typical run 959 of 1,406 output tokens
 were internal. The visible answer — the part the user reads — is roughly a third of what
 is paid for. Any cost model built on visible output length would understate the bill by
 about 3×.</p></div>
@@ -436,18 +436,18 @@ $0.15/1M input, $0.075/1M cached, $0.6/1M output.</p>
 <table>
 <tr><th>Scale</th><th>Runs / month</th><th>Cost / month</th><th>Cost / year</th></tr>
 <tr><td>One user</td><td class=n>20</td>
-<td class=n>$0.0224</td>
+<td class=n>$0.0223</td>
 <td class=n>$0.27</td></tr>
 <tr><td>100 users</td><td class=n>2,000</td>
-<td class=n>$2.24</td>
-<td class=n>$26.85</td></tr>
+<td class=n>$2.23</td>
+<td class=n>$26.79</td></tr>
 <tr><td>10,000 users</td><td class=n>200,000</td>
-<td class=n>$223.77</td>
-<td class=n>$2,685.19</td></tr>
+<td class=n>$223.26</td>
+<td class=n>$2,679.08</td></tr>
 </table>
 
 <p>At 10,000 users the model bill is roughly
-<b>$2,685 per year</b> — about
+<b>$2,679 per year</b> — about
 <b>$0.27 per user per year</b>. Weather costs nothing
 (Open-Meteo, no key). The deterministic engine costs nothing. Inference is effectively
 the entire marginal cost of the product.</p>
@@ -463,24 +463,24 @@ concrete deployments, costed from the measured per-run figure of $0.00112:</p>
 <th>What it would replace</th></tr>
 <tr><td><b>A university residential college</b><br><span class=cap style="margin:0">Yale colleges run roughly this size</span></td>
 <td class=n>450</td><td class=n>9,000</td>
-<td class=n>$120.83</td>
+<td class=n>$120.56</td>
 <td>Nothing — this is additive. The cost is below a single bulk order of moisturiser for a
 college wellbeing cupboard.</td></tr>
 <tr><td><b>A dermatology clinic's patient list</b><br><span class=cap style="margin:0">Barrier-repair advice between appointments</span></td>
 <td class=n>2,000</td><td class=n>40,000</td>
-<td class=n>$537.04</td>
+<td class=n>$535.82</td>
 <td>Perhaps one avoided follow-up visit per year across the whole list, which in the US would
 cover the annual bill many times over.</td></tr>
 <tr><td><b>A skincare retailer's customer base</b><br><span class=cap style="margin:0">As a service, not a sales funnel</span></td>
 <td class=n>10,000</td><td class=n>200,000</td>
-<td class=n>$2,685.19</td>
+<td class=n>$2,679.08</td>
 <td>Returns driven by "it stopped working" when the real cause was oxidation or a seasonal
 mismatch, both of which §7 shows the app detects.</td></tr>
 </table>
 
 <p>The shape of this is the point: at every scale the model bill is small enough that it is
 not the constraint. Ten thousand people cost about
-<b>$2,685 a year</b> to serve — roughly the
+<b>$2,679 a year</b> to serve — roughly the
 price of <b>15</b> of the oxidised
 serums found on the single shelf in §7. Weather is free, the engine is free, and the
 deterministic design means the forecast week adds nothing at all. What would actually limit a
@@ -629,7 +629,7 @@ bounded at roughly $0.00360, about
 <tr><td>Wasted product value identified, one shelf</td><td class=n>$182.00</td><td>measured, Fig. 6</td></tr>
 <tr><td>Share of shelf value past its window</td><td class=n>56%</td><td>measured, Fig. 6</td></tr>
 <tr><td>Cost to run DewPoint, per user per year</td><td class=n>$0.27</td><td>measured, §5</td></tr>
-<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~678×</td><td>derived</td></tr>
+<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~679×</td><td>derived</td></tr>
 <tr><td>Time to a decision</td><td class=n>~9 s</td><td>measured, §5</td></tr>
 <tr><td>People who guessed the wrong band</td><td class=n>4 of 5</td><td>measured, below</td></tr>
 <tr><td>Mean error in those guesses</td><td class=n>22.2 pts</td><td>measured, below</td></tr>
@@ -793,7 +793,13 @@ October that the gel moisturiser they bought in July will be wrong in three week
 the barrier damage, not after.</li>
 </ol>
 
-<div class=ft>DewPoint · MGT 409 final project · Jennifer Pham · 25 October 2026<br>
+<div class=ft>
+<b style="color:#1d1a17">Repository (public):
+<a href="https://github.com/thuydgpham99/dewpoint">https://github.com/thuydgpham99/dewpoint</a></b><br>
+Clone it, then <code>pip install -r requirements.txt</code> and <code>python3 app.py</code>.
+Place <code>.env</code> in the repo folder or one level above. <code>python3 selftest.py</code>
+runs 18 checks.<br><br>
+DewPoint · MGT 409 final project · Jennifer Pham · 26 October 2026<br>
 Weather from Open-Meteo. Model gpt-5.6-luna via Portkey. All token counts measured from
 provider usage fields and logged to <code>runs/usage.jsonl</code>.<br>
 Cosmetic guidance only. Not medical advice.</div>
