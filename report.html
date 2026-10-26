@@ -64,7 +64,7 @@ the <code>.env</code> one level above, dependencies installed in 4 seconds.<br>
 <b>Self-check:</b> <code>python3 selftest.py</code> runs 18 checks, including a live model
 call, and should report 18/18.<br>
 <b>Model:</b> gpt-5.6-luna via Portkey &nbsp;·&nbsp;
-<b>Runs measured for this report:</b> 61<br><br>
+<b>Runs measured for this report:</b> 70<br><br>
 DewPoint derives the relative humidity your skin actually sits in — indoor air, not the
 outdoor figure your weather app reports — and uses that one number to plan both your
 skincare routine and what you wear.
@@ -149,6 +149,58 @@ they just recommended.</td></tr>
 </table>
 
 <p>Nothing in that list joins the two halves, and nothing computes the indoor figure.</p>
+
+<h3>Measured against the closest competitor</h3>
+
+<p>Claiming ChatGPT cannot do this is cheap unless it is tested, so I tested it. The same
+model DewPoint uses was asked directly, across all 16 sample cities, in the two
+framings that matter.</p>
+
+<p><b>Framing A, assisted.</b> The model is handed the dew point explicitly. This is a
+generous test: it presupposes the user already knows that dew point is the quantity that
+governs the answer, which is the entire insight. Result: it matched the engine's advice band
+in <b>11 of 14</b> cities, mean error <b>5.7 points</b>. It declined
+to give a number at all for two cities.</p>
+
+<p><b>Framing B, realistic.</b> The model is told what a weather app would show — temperature
+and relative humidity — and asked what the skin is dealing with. This is what a person would
+actually type.</p>
+
+<table>
+<tr><th>City</th><th style="text-align:right">Engine</th><th>Band</th>
+<th style="text-align:right">Model</th><th>Band</th>
+<th style="text-align:right">Error</th><th>Advice</th></tr>
+<tr><td>New Haven</td><td class=n>23.6%</td><td>high</td><td class=n>25%</td><td>high</td><td class=n>1.4</td><td>same</td></tr><tr class=diff><td>New York</td><td class=n>16.2%</td><td>severe</td><td class=n>20%</td><td>high</td><td class=n>3.8</td><td><b>different</b></td></tr><tr><td>Mexico City</td><td class=n>47.6%</td><td>comfortable</td><td class=n>50%</td><td>comfortable</td><td class=n>2.4</td><td>same</td></tr><tr class=diff><td>Phoenix</td><td class=n>27.3%</td><td>high</td><td class=n>30%</td><td>moderate</td><td class=n>2.7</td><td><b>different</b></td></tr><tr class=diff><td>London</td><td class=n>41.5%</td><td>comfortable</td><td class=n>88%</td><td>humid</td><td class=n>46.5</td><td><b>different</b></td></tr><tr class=diff><td>Reykjavik</td><td class=n>25.4%</td><td>high</td><td class=n>30%</td><td>moderate</td><td class=n>4.6</td><td><b>different</b></td></tr><tr><td>Paris</td><td class=n>44.5%</td><td>comfortable</td><td class=n>45%</td><td>comfortable</td><td class=n>0.5</td><td>same</td></tr><tr><td>Hanoi</td><td class=n>61.9%</td><td>humid</td><td class=n>60%</td><td>humid</td><td class=n>1.9</td><td>same</td></tr><tr><td>Hanoi winter</td><td class=n>62.1%</td><td>humid</td><td class=n>70%</td><td>humid</td><td class=n>7.9</td><td>same</td></tr><tr><td>Seoul</td><td class=n>11.9%</td><td>severe</td><td class=n>11%</td><td>severe</td><td class=n>0.9</td><td>same</td></tr><tr class=diff><td>Tokyo</td><td class=n>66.3%</td><td>humid</td><td class=n>55%</td><td>comfortable</td><td class=n>11.3</td><td><b>different</b></td></tr><tr><td>Singapore</td><td class=n>60.9%</td><td>humid</td><td class=n>60%</td><td>humid</td><td class=n>0.9</td><td>same</td></tr><tr><td>Mumbai</td><td class=n>60.9%</td><td>humid</td><td class=n>70%</td><td>humid</td><td class=n>9.1</td><td>same</td></tr><tr><td>Dubai</td><td class=n>55.3%</td><td>comfortable</td><td class=n>45%</td><td>comfortable</td><td class=n>10.3</td><td>same</td></tr><tr class=diff><td>Lagos</td><td class=n>59.9%</td><td>comfortable</td><td class=n>60%</td><td>humid</td><td class=n>0.1</td><td><b>different</b></td></tr><tr><td>Sydney</td><td class=n>66.3%</td><td>humid</td><td class=n>60%</td><td>humid</td><td class=n>6.3</td><td>same</td></tr>
+</table>
+
+<div class="box warn"><h4>Asked the way a person would ask, the model gives different advice in 6 of 16 cities</h4>
+<p style="margin:0">Mean absolute error <b>6.9 points</b>, median
+<b>3.2</b>, worst miss <b>46.5</b>. The worst case is instructive: asked
+about London, the model answered <b>88%</b> — which is precisely the outdoor relative humidity
+it had just been given. It did not compute anything. It handed the number back.</p></div>
+
+<p><b>The honest reading of this.</b> A capable model is not useless here. Its median error is
+3.2 points and it gets the band right roughly six times in ten, which is better than
+guessing — and considerably better than the five people in §7, who managed one in five. If the
+question were asked once, out of curiosity, the model would usually do.</p>
+
+<p>Three things stop that being sufficient for something acted on daily:</p>
+<ul>
+<li><b>It fails silently and unpredictably.</b> A 46-point miss arrives in the same confident
+register as a 1-point one. Nothing in the answer signals which you received.</li>
+<li><b>It fails worst where the reasoning is least intuitive.</b> In the assisted framing it
+missed Hanoi by 21.9 points, treating an air-conditioned tropical room as though it were being
+heated. That is precisely the case a person could not catch themselves.</li>
+<li><b>It is not reproducible.</b> Ask twice, get two numbers. The engine returns the same
+figure for the same inputs, every time, in under a millisecond and at no cost — against
+4.3 seconds and $0.00032 per question.</li>
+</ul>
+
+<p>So the claim this project makes is narrower than "the model cannot do it", and more
+defensible: <i>a derived number that is always right beats a plausible number that is usually
+right, when the thing being decided is what you put on your face every morning.</i> That is
+also why the arithmetic lives in <code>climate.py</code> and not in a prompt — the same
+argument, applied internally, is the core of §4.</p>
 
 <p><b>What DewPoint does differently.</b> Three things, in order of how new they are:</p>
 
@@ -287,7 +339,7 @@ key is used anywhere. Having
 measured it, the choice is defensible on its own terms for agents 1 and 2 — both emit
 small, strictly-shaped JSON where reliability matters more than fluency — but it is a
 poor fit for agent 3, and the measurements in §4 show why: the model spends
-<b>65% of its output budget on hidden reasoning tokens</b>, which is
+<b>68% of its output budget on hidden reasoning tokens</b>, which is
 expensive for a task that is essentially rewriting. If a cheaper non-reasoning model were
 available on the course key, the Briefer is the call I would move first.</p>
 
@@ -355,22 +407,22 @@ outfit split across the day, the afternoon repeating the morning minus a layer.<
 
 <p>Every figure in this section is read from the provider's own <code>usage</code> field
 and logged to <code>runs/usage.jsonl</code> by <code>meter.py</code>. Nothing is estimated.
-Measured across <b>61 runs</b>.</p>
+Measured across <b>70 runs</b>.</p>
 
 <table>
 <tr><th>Measure</th><th>Per run (mean)</th></tr>
-<tr><td>Input tokens</td><td class=n>1,808</td></tr>
+<tr><td>Input tokens</td><td class=n>1,803</td></tr>
 <tr><td>Cached input tokens</td><td class=n>0</td></tr>
-<tr><td>Output tokens (visible + reasoning)</td><td class=n>1,238</td></tr>
-<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>808 (65%)</td></tr>
-<tr><td><b>Total tokens</b></td><td class=n><b>3,046</b></td></tr>
-<tr><td><b>Cost per run</b></td><td class=n><b>$0.00101</b></td></tr>
+<tr><td>Output tokens (visible + reasoning)</td><td class=n>1,425</td></tr>
+<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>974 (68%)</td></tr>
+<tr><td><b>Total tokens</b></td><td class=n><b>3,228</b></td></tr>
+<tr><td><b>Cost per run</b></td><td class=n><b>$0.00113</b></td></tr>
 </table>
 
 <h3>The finding that matters</h3>
-<div class="box warn"><h4>65% of output tokens are never shown to the user</h4>
+<div class="box warn"><h4>68% of output tokens are never shown to the user</h4>
 <p style="margin:0">This model reasons before answering, and reasoning tokens bill at the
-output rate. On a typical run 808 of 1,238 output tokens
+output rate. On a typical run 974 of 1,425 output tokens
 were internal. The visible answer — the part the user reads — is roughly a third of what
 is paid for. Any cost model built on visible output length would understate the bill by
 about 3×.</p></div>
@@ -383,21 +435,60 @@ $0.15/1M input, $0.075/1M cached, $0.6/1M output.</p>
 <table>
 <tr><th>Scale</th><th>Runs / month</th><th>Cost / month</th><th>Cost / year</th></tr>
 <tr><td>One user</td><td class=n>20</td>
-<td class=n>$0.0203</td>
-<td class=n>$0.24</td></tr>
+<td class=n>$0.0225</td>
+<td class=n>$0.27</td></tr>
 <tr><td>100 users</td><td class=n>2,000</td>
-<td class=n>$2.03</td>
-<td class=n>$24.34</td></tr>
+<td class=n>$2.25</td>
+<td class=n>$27.01</td></tr>
 <tr><td>10,000 users</td><td class=n>200,000</td>
-<td class=n>$202.82</td>
-<td class=n>$2,433.84</td></tr>
+<td class=n>$225.07</td>
+<td class=n>$2,700.86</td></tr>
 </table>
 
 <p>At 10,000 users the model bill is roughly
-<b>$2,434 per year</b> — about
-<b>$0.24 per user per year</b>. Weather costs nothing
+<b>$2,701 per year</b> — about
+<b>$0.27 per user per year</b>. Weather costs nothing
 (Open-Meteo, no key). The deterministic engine costs nothing. Inference is effectively
 the entire marginal cost of the product.</p>
+
+<h3>At organisation scale</h3>
+
+<p>Per-user figures understate what matters to whoever would actually deploy this, so three
+concrete deployments, costed from the measured per-run figure of $0.00113:</p>
+
+<table>
+<tr><th>Deployment</th><th style="text-align:right">People</th>
+<th style="text-align:right">Runs / month</th><th style="text-align:right">Model cost / yr</th>
+<th>What it would replace</th></tr>
+<tr><td><b>A university residential college</b><br><span class=cap style="margin:0">Yale colleges run roughly this size</span></td>
+<td class=n>450</td><td class=n>9,000</td>
+<td class=n>$121.54</td>
+<td>Nothing — this is additive. The cost is below a single bulk order of moisturiser for a
+college wellbeing cupboard.</td></tr>
+<tr><td><b>A dermatology clinic's patient list</b><br><span class=cap style="margin:0">Barrier-repair advice between appointments</span></td>
+<td class=n>2,000</td><td class=n>40,000</td>
+<td class=n>$540.17</td>
+<td>Perhaps one avoided follow-up visit per year across the whole list, which in the US would
+cover the annual bill many times over.</td></tr>
+<tr><td><b>A skincare retailer's customer base</b><br><span class=cap style="margin:0">As a service, not a sales funnel</span></td>
+<td class=n>10,000</td><td class=n>200,000</td>
+<td class=n>$2,700.86</td>
+<td>Returns driven by "it stopped working" when the real cause was oxidation or a seasonal
+mismatch, both of which §7 shows the app detects.</td></tr>
+</table>
+
+<p>The shape of this is the point: at every scale the model bill is small enough that it is
+not the constraint. Ten thousand people cost about
+<b>$2,701 a year</b> to serve — roughly the
+price of <b>15</b> of the oxidised
+serums found on the single shelf in §7. Weather is free, the engine is free, and the
+deterministic design means the forecast week adds nothing at all. What would actually limit a
+deployment is trust and distribution, not inference.</p>
+
+<p><b>The nonprofit case.</b> A campus or clinic deployment at 450 people costs under
+<b>$122 a year</b>. That is small enough to sit
+inside an existing student-wellbeing budget without a procurement conversation, which matters
+more for adoption than any technical property of the system.</p>
 
 <h3>Cost-cutting, measured</h3>
 <p>I tested the obvious lever: collapsing the three agents into one merged call producing
@@ -418,7 +509,7 @@ entire run rather than one third of it, and the three-agent version degrades gra
 because each agent's output is validated independently. I have kept the three-agent
 pipeline as the default and shipped the merged version as a benchmark rather than a
 setting. At this cost per run the 22% saving is worth about
-$0.05 per user per year, which does
+$0.06 per user per year, which does
 not justify the reliability loss until the user base is far larger.</p>
 
 <h3>Two other levers, and why one failed</h3>
@@ -516,7 +607,7 @@ painful, or affecting your breathing, treat it as urgent."
 <p>The ceiling is enforced mid-pipeline: if the first two agents exceed it, the Briefer is
 skipped and the user still receives a complete structured plan. Worst-case cost per run is
 bounded at roughly $0.00360, about
-2.0× the measured mean.</p>
+1.9× the measured mean.</p>
 
 <h2>7. Impact</h2>
 
@@ -536,8 +627,8 @@ bounded at roughly $0.00360, about
 <tr><th>Metric</th><th>Value</th><th>Source</th></tr>
 <tr><td>Wasted product value identified, one shelf</td><td class=n>$182.00</td><td>measured, Fig. 6</td></tr>
 <tr><td>Share of shelf value past its window</td><td class=n>56%</td><td>measured, Fig. 6</td></tr>
-<tr><td>Cost to run DewPoint, per user per year</td><td class=n>$0.24</td><td>measured, §5</td></tr>
-<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~748×</td><td>derived</td></tr>
+<tr><td>Cost to run DewPoint, per user per year</td><td class=n>$0.27</td><td>measured, §5</td></tr>
+<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~674×</td><td>derived</td></tr>
 <tr><td>Time to a decision</td><td class=n>~9 s</td><td>measured, §5</td></tr>
 <tr><td>People who guessed the wrong band</td><td class=n>4 of 5</td><td>measured, below</td></tr>
 <tr><td>Mean error in those guesses</td><td class=n>22.2 pts</td><td>measured, below</td></tr>
@@ -629,7 +720,7 @@ sensors would remove the guess entirely.</li>
 skin tightness correlated against computed indoor RH. The guessing exercise establishes that
 people do not know the number; this would establish whether knowing it helps, which is the
 harder and more useful question.</li>
-<li><b>Move the Briefer to a non-reasoning model.</b> §5 shows 65% of output
+<li><b>Move the Briefer to a non-reasoning model.</b> §5 shows 68% of output
 tokens are internal; the Briefer is a rewriting task that does not need them.</li>
 <li><b>Seasonal pre-emption.</b> The dated inventory makes it possible to warn a user in
 October that the gel moisturiser they bought in July will be wrong in three weeks — before

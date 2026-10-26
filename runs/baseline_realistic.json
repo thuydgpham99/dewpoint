@@ -1,0 +1,188 @@
+{
+  "rows": [
+    {
+      "city": "New Haven",
+      "truth_rh": 23.6,
+      "truth_band": "high",
+      "model_rh": 25.0,
+      "model_band": "high",
+      "error": 1.3999999999999986,
+      "band_match": true,
+      "seconds": 4.11,
+      "no_number": false
+    },
+    {
+      "city": "New York",
+      "truth_rh": 16.2,
+      "truth_band": "severe",
+      "model_rh": 20.0,
+      "model_band": "high",
+      "error": 3.8000000000000007,
+      "band_match": false,
+      "seconds": 4.8,
+      "no_number": false
+    },
+    {
+      "city": "Mexico City",
+      "truth_rh": 47.6,
+      "truth_band": "comfortable",
+      "model_rh": 50.0,
+      "model_band": "comfortable",
+      "error": 2.3999999999999986,
+      "band_match": true,
+      "seconds": 3.66,
+      "no_number": false
+    },
+    {
+      "city": "Phoenix",
+      "truth_rh": 27.3,
+      "truth_band": "high",
+      "model_rh": 30.0,
+      "model_band": "moderate",
+      "error": 2.6999999999999993,
+      "band_match": false,
+      "seconds": 3.69,
+      "no_number": false
+    },
+    {
+      "city": "London",
+      "truth_rh": 41.5,
+      "truth_band": "comfortable",
+      "model_rh": 88.0,
+      "model_band": "humid",
+      "error": 46.5,
+      "band_match": false,
+      "seconds": 3.0,
+      "no_number": false
+    },
+    {
+      "city": "Reykjavik",
+      "truth_rh": 25.4,
+      "truth_band": "high",
+      "model_rh": 30.0,
+      "model_band": "moderate",
+      "error": 4.600000000000001,
+      "band_match": false,
+      "seconds": 5.32,
+      "no_number": false
+    },
+    {
+      "city": "Paris",
+      "truth_rh": 44.5,
+      "truth_band": "comfortable",
+      "model_rh": 45.0,
+      "model_band": "comfortable",
+      "error": 0.5,
+      "band_match": true,
+      "seconds": 3.72,
+      "no_number": false
+    },
+    {
+      "city": "Hanoi",
+      "truth_rh": 61.9,
+      "truth_band": "humid",
+      "model_rh": 60.0,
+      "model_band": "humid",
+      "error": 1.8999999999999986,
+      "band_match": true,
+      "seconds": 3.7,
+      "no_number": false
+    },
+    {
+      "city": "Hanoi winter",
+      "truth_rh": 62.1,
+      "truth_band": "humid",
+      "model_rh": 70.0,
+      "model_band": "humid",
+      "error": 7.899999999999999,
+      "band_match": true,
+      "seconds": 4.48,
+      "no_number": false
+    },
+    {
+      "city": "Seoul",
+      "truth_rh": 11.9,
+      "truth_band": "severe",
+      "model_rh": 11.0,
+      "model_band": "severe",
+      "error": 0.9000000000000004,
+      "band_match": true,
+      "seconds": 4.22,
+      "no_number": false
+    },
+    {
+      "city": "Tokyo",
+      "truth_rh": 66.3,
+      "truth_band": "humid",
+      "model_rh": 55.0,
+      "model_band": "comfortable",
+      "error": 11.299999999999997,
+      "band_match": false,
+      "seconds": 5.0,
+      "no_number": false
+    },
+    {
+      "city": "Singapore",
+      "truth_rh": 60.9,
+      "truth_band": "humid",
+      "model_rh": 60.0,
+      "model_band": "humid",
+      "error": 0.8999999999999986,
+      "band_match": true,
+      "seconds": 3.52,
+      "no_number": false
+    },
+    {
+      "city": "Mumbai",
+      "truth_rh": 60.9,
+      "truth_band": "humid",
+      "model_rh": 70.0,
+      "model_band": "humid",
+      "error": 9.100000000000001,
+      "band_match": true,
+      "seconds": 5.09,
+      "no_number": false
+    },
+    {
+      "city": "Dubai",
+      "truth_rh": 55.3,
+      "truth_band": "comfortable",
+      "model_rh": 45.0,
+      "model_band": "comfortable",
+      "error": 10.299999999999997,
+      "band_match": true,
+      "seconds": 5.98,
+      "no_number": false
+    },
+    {
+      "city": "Lagos",
+      "truth_rh": 59.9,
+      "truth_band": "comfortable",
+      "model_rh": 60.0,
+      "model_band": "humid",
+      "error": 0.10000000000000142,
+      "band_match": false,
+      "seconds": 3.41,
+      "no_number": false
+    },
+    {
+      "city": "Sydney",
+      "truth_rh": 66.3,
+      "truth_band": "humid",
+      "model_rh": 60.0,
+      "model_band": "humid",
+      "error": 6.299999999999997,
+      "band_match": true,
+      "seconds": 5.33,
+      "no_number": false
+    }
+  ],
+  "n": 16,
+  "mean_error": 6.9125,
+  "median_error": 3.25,
+  "worst_error": 46.5,
+  "band_matches": 10,
+  "no_number": 0,
+  "cost": 0.004591,
+  "mean_latency": 4.314375
+}

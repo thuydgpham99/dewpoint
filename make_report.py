@@ -42,6 +42,28 @@ for _name, _w in _fx.items():
 _band_rows.sort(key=lambda r: r[3])
 
 # ---- the user study ----------------------------------------------------
+_bl = json.loads((HERE / "runs/baseline.json").read_text()) if (HERE / "runs/baseline.json").exists() else None
+_blr = json.loads((HERE / "runs/baseline_realistic.json").read_text()) if (HERE / "runs/baseline_realistic.json").exists() else None
+if _blr:
+    BL_ROWS = "".join(
+        f'<tr{"" if r.get("band_match") else " class=diff"}><td>{r["city"]}</td>'
+        f'<td class=n>{r["truth_rh"]:.1f}%</td><td>{r["truth_band"]}</td>'
+        f'<td class=n>{r["model_rh"]:.0f}%</td><td>{r["model_band"]}</td>'
+        f'<td class=n>{r["error"]:.1f}</td>'
+        f'<td>{"same" if r.get("band_match") else "<b>different</b>"}</td></tr>'
+        for r in _blr["rows"] if not r.get("no_number"))
+    BL_N = _blr["n"]; BL_MATCH = _blr["band_matches"]
+    BL_MEAN = _blr["mean_error"]; BL_MED = _blr["median_error"]; BL_WORST = _blr["worst_error"]
+    BL_MISS = BL_N - BL_MATCH
+    BLA_MATCH = _bl["band_matches"] if _bl else 0
+    BLA_N = _bl["n"] if _bl else 0
+    BLA_MEAN = _bl["mean_error"] if _bl else 0
+    BLA_LAT = _bl["mean_latency"] if _bl else 0
+    BLA_COST = _bl["baseline_cost"] if _bl else 0
+else:
+    BL_ROWS = ""; BL_N = BL_MATCH = BL_MISS = 0
+    BL_MEAN = BL_MED = BL_WORST = BLA_MATCH = BLA_N = BLA_MEAN = BLA_LAT = BLA_COST = 0
+
 _study = json.loads((HERE / "data/user_study.json").read_text())
 STUDY_GUESSES = _study["guesses"]
 STUDY_ACTUAL = _study["actual_indoor_rh"]
@@ -267,6 +289,58 @@ they just recommended.</td></tr>
 </table>
 
 <p>Nothing in that list joins the two halves, and nothing computes the indoor figure.</p>
+
+<h3>Measured against the closest competitor</h3>
+
+<p>Claiming ChatGPT cannot do this is cheap unless it is tested, so I tested it. The same
+model DewPoint uses was asked directly, across all {N_CITIES} sample cities, in the two
+framings that matter.</p>
+
+<p><b>Framing A, assisted.</b> The model is handed the dew point explicitly. This is a
+generous test: it presupposes the user already knows that dew point is the quantity that
+governs the answer, which is the entire insight. Result: it matched the engine's advice band
+in <b>{BLA_MATCH} of {BLA_N}</b> cities, mean error <b>{BLA_MEAN:.1f} points</b>. It declined
+to give a number at all for two cities.</p>
+
+<p><b>Framing B, realistic.</b> The model is told what a weather app would show — temperature
+and relative humidity — and asked what the skin is dealing with. This is what a person would
+actually type.</p>
+
+<table>
+<tr><th>City</th><th style="text-align:right">Engine</th><th>Band</th>
+<th style="text-align:right">Model</th><th>Band</th>
+<th style="text-align:right">Error</th><th>Advice</th></tr>
+{BL_ROWS}
+</table>
+
+<div class="box warn"><h4>Asked the way a person would ask, the model gives different advice in {BL_MISS} of {BL_N} cities</h4>
+<p style="margin:0">Mean absolute error <b>{BL_MEAN:.1f} points</b>, median
+<b>{BL_MED:.1f}</b>, worst miss <b>{BL_WORST:.1f}</b>. The worst case is instructive: asked
+about London, the model answered <b>88%</b> — which is precisely the outdoor relative humidity
+it had just been given. It did not compute anything. It handed the number back.</p></div>
+
+<p><b>The honest reading of this.</b> A capable model is not useless here. Its median error is
+{BL_MED:.1f} points and it gets the band right roughly six times in ten, which is better than
+guessing — and considerably better than the five people in §7, who managed one in five. If the
+question were asked once, out of curiosity, the model would usually do.</p>
+
+<p>Three things stop that being sufficient for something acted on daily:</p>
+<ul>
+<li><b>It fails silently and unpredictably.</b> A 46-point miss arrives in the same confident
+register as a 1-point one. Nothing in the answer signals which you received.</li>
+<li><b>It fails worst where the reasoning is least intuitive.</b> In the assisted framing it
+missed Hanoi by 21.9 points, treating an air-conditioned tropical room as though it were being
+heated. That is precisely the case a person could not catch themselves.</li>
+<li><b>It is not reproducible.</b> Ask twice, get two numbers. The engine returns the same
+figure for the same inputs, every time, in under a millisecond and at no cost — against
+{BLA_LAT:.1f} seconds and ${BLA_COST / max(BLA_N, 1):.5f} per question.</li>
+</ul>
+
+<p>So the claim this project makes is narrower than "the model cannot do it", and more
+defensible: <i>a derived number that is always right beats a plausible number that is usually
+right, when the thing being decided is what you put on your face every morning.</i> That is
+also why the arithmetic lives in <code>climate.py</code> and not in a prompt — the same
+argument, applied internally, is the core of §4.</p>
 
 <p><b>What DewPoint does differently.</b> Three things, in order of how new they are:</p>
 
@@ -516,6 +590,45 @@ ${rates['input']}/1M input, ${rates['cached_input']}/1M cached, ${rates['output'
 <b>${avg['cost']*RUNS_PER_USER_MONTH*12:.2f} per user per year</b>. Weather costs nothing
 (Open-Meteo, no key). The deterministic engine costs nothing. Inference is effectively
 the entire marginal cost of the product.</p>
+
+<h3>At organisation scale</h3>
+
+<p>Per-user figures understate what matters to whoever would actually deploy this, so three
+concrete deployments, costed from the measured per-run figure of ${avg['cost']:.5f}:</p>
+
+<table>
+<tr><th>Deployment</th><th style="text-align:right">People</th>
+<th style="text-align:right">Runs / month</th><th style="text-align:right">Model cost / yr</th>
+<th>What it would replace</th></tr>
+<tr><td><b>A university residential college</b><br><span class=cap style="margin:0">Yale colleges run roughly this size</span></td>
+<td class=n>450</td><td class=n>{450 * RUNS_PER_USER_MONTH:,}</td>
+<td class=n>${avg['cost'] * RUNS_PER_USER_MONTH * 450 * 12:.2f}</td>
+<td>Nothing — this is additive. The cost is below a single bulk order of moisturiser for a
+college wellbeing cupboard.</td></tr>
+<tr><td><b>A dermatology clinic's patient list</b><br><span class=cap style="margin:0">Barrier-repair advice between appointments</span></td>
+<td class=n>2,000</td><td class=n>{2000 * RUNS_PER_USER_MONTH:,}</td>
+<td class=n>${avg['cost'] * RUNS_PER_USER_MONTH * 2000 * 12:.2f}</td>
+<td>Perhaps one avoided follow-up visit per year across the whole list, which in the US would
+cover the annual bill many times over.</td></tr>
+<tr><td><b>A skincare retailer's customer base</b><br><span class=cap style="margin:0">As a service, not a sales funnel</span></td>
+<td class=n>10,000</td><td class=n>{10000 * RUNS_PER_USER_MONTH:,}</td>
+<td class=n>${avg['cost'] * RUNS_PER_USER_MONTH * 10000 * 12:,.2f}</td>
+<td>Returns driven by "it stopped working" when the real cause was oxidation or a seasonal
+mismatch, both of which §7 shows the app detects.</td></tr>
+</table>
+
+<p>The shape of this is the point: at every scale the model bill is small enough that it is
+not the constraint. Ten thousand people cost about
+<b>${avg['cost'] * RUNS_PER_USER_MONTH * 10000 * 12:,.0f} a year</b> to serve — roughly the
+price of <b>{(avg['cost'] * RUNS_PER_USER_MONTH * 10000 * 12) / 182:.0f}</b> of the oxidised
+serums found on the single shelf in §7. Weather is free, the engine is free, and the
+deterministic design means the forecast week adds nothing at all. What would actually limit a
+deployment is trust and distribution, not inference.</p>
+
+<p><b>The nonprofit case.</b> A campus or clinic deployment at 450 people costs under
+<b>${avg['cost'] * RUNS_PER_USER_MONTH * 450 * 12:.0f} a year</b>. That is small enough to sit
+inside an existing student-wellbeing budget without a procurement conversation, which matters
+more for adoption than any technical property of the system.</p>
 
 <h3>Cost-cutting, measured</h3>
 <p>I tested the obvious lever: collapsing the three agents into one merged call producing
