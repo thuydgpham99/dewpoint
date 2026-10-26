@@ -197,7 +197,8 @@ HTML = f"""<!doctype html><html lang=en><head><meta charset=utf-8>
 <div class=meta>
 <b>Author:</b> Jennifer Pham &nbsp;·&nbsp; <b>Course:</b> MGT 409 &nbsp;·&nbsp;
 <b>Date:</b> {date.today():%d %B %Y}<br>
-<b>Repository:</b> <a href="https://github.com/thuydgpham99/dewpoint">github.com/thuydgpham99/dewpoint</a><br>
+<b>Repository (public — clone this to run the app):</b><br>
+<a href="https://github.com/thuydgpham99/dewpoint" style="font-size:12pt;font-weight:600">https://github.com/thuydgpham99/dewpoint</a><br>
 <b>App link:</b> none — DewPoint runs locally. <code>pip install -r requirements.txt</code>
 then <code>python3 app.py</code>; full steps in the README. Verified from a clean clone with
 the <code>.env</code> one level above, dependencies installed in 4 seconds.<br>
