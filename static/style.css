@@ -591,9 +591,13 @@ header.top{padding:66px 0 38px}
 .proof{display:inline-flex;align-items:center;gap:14px;padding:13px 20px 13px 17px;
   border-radius:999px;background:linear-gradient(120deg,var(--p-rose),var(--p-lilac));
   border:1px solid rgba(176,112,137,.18);max-width:100%}
-.proof-stat{font-size:22px;font-weight:800;letter-spacing:-.9px;color:var(--accent-2);
-  flex:none;line-height:1}
-.proof-text{font-size:13px;line-height:1.45;color:var(--ink-2);font-weight:500;max-width:46ch}
+.proof-pair{display:flex;align-items:center;gap:9px;flex:none}
+.pv{font-size:21px;font-weight:800;letter-spacing:-.9px;line-height:1}
+.pv.out{color:var(--ink-3)}
+.pv.in{color:var(--dry)}
+.parrow{font-size:14px;color:var(--ink-4)}
+.proof-text{font-size:12.5px;line-height:1.5;color:var(--ink-2);font-weight:400;max-width:52ch}
+.proof-text b{color:var(--ink);font-weight:700}
 
 .envbar{margin-top:30px;opacity:.72;transition:opacity .2s}
 .envbar:hover{opacity:1}
