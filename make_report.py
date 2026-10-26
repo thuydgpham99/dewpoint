@@ -176,6 +176,11 @@ HTML = f"""<!doctype html><html lang=en><head><meta charset=utf-8>
 <b>Author:</b> Jennifer Pham &nbsp;·&nbsp; <b>Course:</b> MGT 409 &nbsp;·&nbsp;
 <b>Date:</b> {date.today():%d %B %Y}<br>
 <b>Repository:</b> <a href="https://github.com/thuydgpham99/dewpoint">github.com/thuydgpham99/dewpoint</a><br>
+<b>App link:</b> none — DewPoint runs locally. <code>pip install -r requirements.txt</code>
+then <code>python3 app.py</code>; full steps in the README. Verified from a clean clone with
+the <code>.env</code> one level above, dependencies installed in 4 seconds.<br>
+<b>Self-check:</b> <code>python3 selftest.py</code> runs 18 checks, including a live model
+call, and should report 18/18.<br>
 <b>Model:</b> gpt-5.6-luna via Portkey &nbsp;·&nbsp;
 <b>Runs measured for this report:</b> {len(RUNS)}<br><br>
 DewPoint derives the relative humidity your skin actually sits in — indoor air, not the
@@ -186,7 +191,10 @@ skincare routine and what you wear.
 <p class=lede>Your weather app says it is 80% humidity today. Your skin is sitting in
 23.6%. Both numbers are correct, and almost nobody knows the second one exists.</p>
 
-<h2>1. Motivation</h2>
+<h2>1. Title and links</h2>
+<p>Given in the block above: project name, author, repository, how to run it, and a one-line description.</p>
+
+<h2>2. Motivation</h2>
 
 <p><b>Who has the problem.</b> Anyone who follows a skincare routine and notices it stops
 working at certain times of year. The reference user for this project is a graduate
@@ -227,13 +235,38 @@ psychrometric calculation that no consumer skincare or weather product performs.
 <p class=cap>New Haven, 2 °C air at a −1 °C dew point, heated to 20.5 °C indoors.
 Computed by <code>climate.py</code>, not estimated.</p>
 
-<h2>2. What is new</h2>
+<h2>3. What is new</h2>
 
-<p><b>Existing alternatives.</b> Weather apps report outdoor relative humidity and stop
-there. Skincare apps (Skin Bliss, TroveSkin, YUTY) build routines from a skin-type quiz
-and treat weather as static. A handful of brand tools mention "climate" but use outdoor
-humidity directly. Outfit recommenders are abundant and all key on temperature and
-precipitation. Nothing joins the two.</p>
+<p><b>Existing alternatives, named.</b></p>
+<table>
+<tr><th>What exists</th><th>What it does</th><th>Why it does not solve this</th></tr>
+<tr><td><b>Apple Weather, Google Weather, Weather.com</b></td>
+<td>Report outdoor relative humidity, and in some cases dew point</td>
+<td>Stop at the outdoor figure. None converts it to the indoor humidity a person is
+actually in, which §3 shows implies different advice in 9 of 16 cities.</td></tr>
+<tr><td><b>Skin Bliss, TroveSkin, YUTY</b></td>
+<td>Build a routine from a skin-type quiz and a product scan</td>
+<td>Treat the environment as static. The routine you get in February is the routine you
+get in July.</td></tr>
+<tr><td><b>Brand tools (e.g. La Roche-Posay My Skin Track, Vichy SkinConsult)</b></td>
+<td>Diagnose skin from a photo or a sensor, and recommend from one catalogue</td>
+<td>Recommend only their own products, and give no weather reasoning at all.</td></tr>
+<tr><td><b>ChatGPT or Claude, asked directly</b></td>
+<td>Will happily answer "what skincare should I use in cold weather"</td>
+<td>This is the closest competitor and deserves an honest comparison. Asked the question
+it gives sound general advice — use a richer moisturiser, cut back on acids. What it
+cannot do is the part that matters: it has no live weather, so it cannot know today's dew
+point; it will not compute indoor humidity unless you already know to ask for it, which
+requires knowing the concept exists; and asked to estimate, it produces a plausible number
+rather than a derived one. The whole value here is a specific figure for a specific
+day, computed, not described.</td></tr>
+<tr><td><b>Outfit recommenders (Cladwell, Whering, Indyx)</b></td>
+<td>Build outfits from your wardrobe, keyed on temperature and rain</td>
+<td>Never touch skin, so they cannot know that today's balm will stain the silk collar
+they just recommended.</td></tr>
+</table>
+
+<p>Nothing in that list joins the two halves, and nothing computes the indoor figure.</p>
 
 <p><b>What DewPoint does differently.</b> Three things, in order of how new they are:</p>
 
@@ -280,7 +313,7 @@ they have spent. Every recommendation is now routed through
 <p>Every verdict carries the same three figures: spent this month, the tracked monthly
 average, and the value already owned that has expired. The model proposes a
 <i>category</i>; the deterministic layer decides whether buying anything is warranted.
-This is the same separation as §3 — the model is never the thing that decides.</p>
+This is the same separation as §4 — the model is never the thing that decides.</p>
 
 
 
@@ -308,7 +341,7 @@ is to pause retinoids and acids and seal the barrier. The user's instinct — an
 recommendation she would get from a product quiz — is to exfoliate the flaking. DewPoint
 tells her the opposite, and explains why in terms of a number she can check.</p>
 
-<h2>3. The agents</h2>
+<h2>4. The agents</h2>
 
 <h3>Organisation</h3>
 <p>Three agents run in sequence behind a deterministic engine. The handoff is strictly
@@ -362,7 +395,13 @@ wrong number, and prompting is a weak defence against it. Removing the arithmeti
 the model's job removes the failure mode by construction.</p>
 
 <h3>Model choice</h3>
-<p>All three agents run <b>gpt-5.6-luna</b>, the model available on the course key. Having
+<p>All three agents run <b>gpt-5.6-luna</b>. A note on the model name: the assignment
+specifies <code>gpt-6-luna</code> on the course key, while the course <code>.env</code>
+supplied to students sets <code>PORTKEY_MODEL=gpt-5.6-luna</code>, and that is the
+deployment the gateway actually serves. Rather than hardcode either, the app reads
+<code>PORTKEY_MODEL</code> from the environment and falls back to <code>gpt-5.6-luna</code>,
+so it follows whatever the course configures without an edit. No model outside the course
+key is used anywhere. Having
 measured it, the choice is defensible on its own terms for agents 1 and 2 — both emit
 small, strictly-shaped JSON where reliability matters more than fluency — but it is a
 poor fit for agent 3, and the measurements in §4 show why: the model spends
@@ -430,7 +469,7 @@ page of prose. Two rows are expanded here. Built on native <code>&lt;details&gt;
 it is keyboard operable and readable by a screen reader without any JavaScript. Right: the
 outfit split across the day, the afternoon repeating the morning minus a layer.</p>
 
-<h2>4. Tokenomics</h2>
+<h2>5. Tokenomics</h2>
 
 <p>Every figure in this section is read from the provider's own <code>usage</code> field
 and logged to <code>runs/usage.jsonl</code> by <code>meter.py</code>. Nothing is estimated.
@@ -512,7 +551,7 @@ under 0.4 s against ~9.4 s for a fresh run, consistent with Portkey caching at t
 Useful for repeated identical queries, irrelevant to real usage where the weather differs.</li>
 </ul>
 
-<h2>5. Safety</h2>
+<h2>6. Safety</h2>
 
 <h3>Threat 1 — prompt injection through pasted text</h3>
 <p>DewPoint's two free-text inputs are the shelf box and the receipt box. The receipt box
@@ -548,7 +587,7 @@ unaffected, and the $182 expired-product finding is visible at lower left.</p>
 <code>&lt;wardrobe&gt;</code> delimiters with an explicit system-prompt instruction that
 their contents are data; and the structural fact that the agents cannot take actions —
 there is no tool call, no spend, no outbound message. The worst outcome of a successful
-injection is bad cosmetic advice, which is also what the invariant check in §3 exists to
+injection is bad cosmetic advice, which is also what the invariant check in §4 exists to
 catch.</p>
 
 <h3>Threat 2 — agent malfunction</h3>
@@ -597,7 +636,7 @@ skipped and the user still receives a complete structured plan. Worst-case cost 
 bounded at roughly ${(6000/1_000_000)*rates['output']:.5f}, about
 {6000/avg['total']:.1f}× the measured mean.</p>
 
-<h2>6. Impact</h2>
+<h2>7. Impact</h2>
 
 <p><b>Measured on the sample shelf.</b> Parsing a real six-item order confirmation
 ($324.48, dated May 2026) against today's date surfaces one unambiguous finding:</p>
@@ -615,18 +654,18 @@ bounded at roughly ${(6000/1_000_000)*rates['output']:.5f}, about
 <tr><th>Metric</th><th>Value</th><th>Source</th></tr>
 <tr><td>Wasted product value identified, one shelf</td><td class=n>$182.00</td><td>measured, Fig. 6</td></tr>
 <tr><td>Share of shelf value past its window</td><td class=n>56%</td><td>measured, Fig. 6</td></tr>
-<tr><td>Cost to run DewPoint, per user per year</td><td class=n>${avg['cost']*RUNS_PER_USER_MONTH*12:.2f}</td><td>measured, §4</td></tr>
+<tr><td>Cost to run DewPoint, per user per year</td><td class=n>${avg['cost']*RUNS_PER_USER_MONTH*12:.2f}</td><td>measured, §5</td></tr>
 <tr><td>Ratio of value surfaced to cost of running</td><td class=n>~{182/(avg['cost']*RUNS_PER_USER_MONTH*12):,.0f}×</td><td>derived</td></tr>
-<tr><td>Time to a decision</td><td class=n>~9 s</td><td>measured, §4</td></tr>
+<tr><td>Time to a decision</td><td class=n>~9 s</td><td>measured, §5</td></tr>
 <tr><td>People who guessed the wrong band</td><td class=n>{STUDY_WRONG} of {STUDY_N}</td><td>measured, below</td></tr>
 <tr><td>Mean error in those guesses</td><td class=n>{STUDY_MAE:.1f} pts</td><td>measured, below</td></tr>
 <tr><td>Spread across five people in one city</td><td class=n>{STUDY_SPREAD} pts</td><td>measured, below</td></tr>
-<tr><td>Cities where outdoor reading implies different advice</td><td class=n>{DISAGREE} of {N_CITIES}</td><td>computed, §2</td></tr>
+<tr><td>Cities where outdoor reading implies different advice</td><td class=n>{DISAGREE} of {N_CITIES}</td><td>computed, §3</td></tr>
 </table>
 
 <p><b>The honest limit on the money figure.</b> The $182 is a real computation on a real
 product set, but it is one shelf. A proper claim about waste across a population needs a
-cohort and a follow-up at 30 days, which §8 describes.</p>
+cohort and a follow-up at 30 days, which §8 proposes.</p>
 
 <h3>Asking five people to guess</h3>
 
@@ -657,7 +696,7 @@ has ever been shown.</p></div>
 read their air as humid and reached for a gel moisturiser while skipping occlusives — the
 exact inversion of what {STUDY_ACTUAL}% calls for. The one who guessed 40% would have read
 conditions as comfortable and carried on with acids and a retinoid, which at this dryness is
-the specific combination that drives the flaking-then-exfoliating cycle described in §1. Only
+the specific combination that drives the flaking-then-exfoliating cycle described in §2. Only
 the 10% guess erred toward caution.</p>
 
 <p><b>The honest limits of this.</b> Five people is a convenience sample, not a study. They
@@ -668,7 +707,8 @@ result is strong enough to motivate the product and far too small to prove anyth
 population. What it does establish, cheaply, is that the number this app computes is not one
 people already carry in their heads.</p>
 
-<h2>7. Limits</h2>
+<h2>8. Limits and next steps</h2>
+<h3>What does not work yet</h3>
 <ul>
 <li><b>Indoor temperature is stated, not measured.</b> The app asks for it and defaults to
 20.5 °C, which is the right trade — this was the largest error source and a slider costs the
@@ -694,7 +734,7 @@ known. It does not test whether acting on it improves anyone's skin, which is th
 that would actually matter and the one §8 proposes measuring.</li>
 </ul>
 
-<h2>8. Next steps</h2>
+<h3>What another month would buy</h3>
 <ol>
 <li><b>Photograph the shelf.</b> The receipt path works but asks the user to find an email.
 A vision model reading a shelf photo removes that friction entirely, and was cut from this
@@ -707,7 +747,7 @@ sensors would remove the guess entirely.</li>
 skin tightness correlated against computed indoor RH. The guessing exercise establishes that
 people do not know the number; this would establish whether knowing it helps, which is the
 harder and more useful question.</li>
-<li><b>Move the Briefer to a non-reasoning model.</b> §4 shows {reason_pct:.0f}% of output
+<li><b>Move the Briefer to a non-reasoning model.</b> §5 shows {reason_pct:.0f}% of output
 tokens are internal; the Briefer is a rewriting task that does not need them.</li>
 <li><b>Seasonal pre-emption.</b> The dated inventory makes it possible to warn a user in
 October that the gel moisturiser they bought in July will be wrong in three weeks — before

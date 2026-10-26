@@ -90,9 +90,16 @@ The repo ships a small test dataset so it runs with no network:
 - `data/sample_receipt.txt` — a realistic six-item order confirmation
 - `data/sample_receipt_attack.txt` — the same, carrying an injected instruction payload
 
-To use live weather instead, just type any city name; the app calls
-[Open-Meteo](https://open-meteo.com), which needs **no API key**. If the call fails
-it silently falls back to the bundled samples and says so in the UI.
+### Switching between the test dataset and live data
+
+| You want | Do this | What happens |
+|---|---|---|
+| **Live data** (default) | Type any city name and press **Plan my day** | Calls [Open-Meteo](https://open-meteo.com) — no API key needed. The UI footer shows `Open-Meteo (live)`. |
+| **Test dataset only** | `DEWPOINT_OFFLINE=1 python3 app.py` | Every lookup is served from `data/sample_days.json`. No network needed at all. The UI shows `bundled sample (offline)`. |
+| **Test a single city** | Click one of the region buttons (New Haven, Hanoi, Seoul …) | Loads that bundled sample day. |
+
+If a live call fails for any reason, the app falls back to the bundled samples
+automatically and says so in the UI rather than erroring.
 
 ---
 
