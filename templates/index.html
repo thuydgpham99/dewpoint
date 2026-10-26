@@ -65,13 +65,34 @@
     </div>
 
     <div class="card" style="margin-top:20px">
-      <h2>Receipt <span class="opt">optional</span></h2>
-      <p class="sub">Paste an order confirmation and DewPoint dates every product, so it can
-      tell you which ones have oxidised and which were bought for another season. Skip it and
-      everything else still works.</p>
-      <textarea id="receipt" rows="5" placeholder="Paste your order confirmation email here"></textarea>
-      <button class="go" id="scan" style="margin-top:14px" disabled>Add to my shelf</button>
-      <div id="invbox" style="margin-top:16px"></div>
+      <h2>Your room</h2>
+      <p class="sub">DewPoint assumes a room at 20.5&deg;. Tell it otherwise and the
+      number gets more accurate — this is the largest source of error in the whole
+      calculation.</p>
+
+      <label for="roomtemp">Indoor temperature
+        <output id="roomout" for="roomtemp">20.5&deg;</output>
+      </label>
+      <input type="range" id="roomtemp" min="12" max="30" step="0.5" value="20.5">
+      <div class="scale"><span>12&deg; cold flat</span><span>30&deg; overheated</span></div>
+
+      <label class="toggle" for="humid">
+        <input type="checkbox" id="humid">
+        <span class="track"><span class="knob"></span></span>
+        <span class="tlabel">I run a humidifier
+          <em>Holds the room near 45%, so the dew point no longer describes it.</em></span>
+      </label>
+
+      <div id="roomnote" class="roomnote"></div>
+
+      <details class="receipt-fold">
+        <summary>Or paste a receipt to date your products</summary>
+        <p class="hint" style="margin-top:9px">An order confirmation lets DewPoint work out
+        which products have oxidised and which were bought for another season.</p>
+        <textarea id="receipt" rows="4" placeholder="Paste your order confirmation email here"></textarea>
+        <button class="go" id="scan" style="margin-top:12px" disabled>Add to my shelf</button>
+        <div id="invbox" style="margin-top:16px"></div>
+      </details>
     </div>
   </div>
 
@@ -109,7 +130,9 @@ $('#go').addEventListener('click', async () => {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ city:$('#city').value,
                              shelf:CHIPS.shelf.join(', '),
-                             wardrobe:CHIPS.wardrobe.join(', ') })
+                             wardrobe:CHIPS.wardrobe.join(', '),
+                             indoor_temp_c: $('#roomtemp').value,
+                             humidifier: $('#humid').checked })
     });
     render(await r.json());
   } catch (err) {
@@ -117,6 +140,27 @@ $('#go').addEventListener('click', async () => {
   }
   btn.disabled = false; btn.textContent = 'Plan my day';
 });
+
+const roomTemp = $('#roomtemp'), roomOut = $('#roomout'),
+      humidBox = $('#humid'), roomNote = $('#roomnote');
+
+function refreshRoom() {
+  const t = parseFloat(roomTemp.value);
+  roomOut.textContent = t.toFixed(1) + '\u00b0';
+  const parts = [];
+  if (Math.abs(t - 20.5) >= 1.5) {
+    parts.push(t < 20.5
+      ? 'A cooler room holds its moisture better, so your air is less dry than the default assumes.'
+      : 'A warmer room dries the air further — every degree of heating costs you humidity.');
+  }
+  if (humidBox.checked) {
+    parts.push('With a humidifier running the room sits near 45% whatever the outdoor air was carrying.');
+  }
+  roomNote.innerHTML = parts.length ? parts.map(x => `<span>${x}</span>`).join('') : '';
+}
+roomTemp.addEventListener('input', refreshRoom);
+humidBox.addEventListener('change', refreshRoom);
+refreshRoom();
 
 const receiptBox = $('#receipt'), scanBtn = $('#scan');
 receiptBox.addEventListener('input', () => {
@@ -499,9 +543,26 @@ function render(d) {
       <div class="rwhy">${esc(why || 'No reason given.')}</div>
     </details>`;
 
+  // Morning first, then anything used twice, then evening, then what to skip.
+  // The list should read in the order you will actually work through it.
+  const SLOT = { am: 0, 'am|pm': 1, both: 1, pm: 2 };
+  const slotOf = w => {
+    const k = String(w || '').toLowerCase().replace(/\s+/g, '');
+    return k in SLOT ? SLOT[k] : 1;
+  };
+  const slotClass = w => {
+    const k = String(w || '').toLowerCase().replace(/\s+/g, '');
+    if (k === 'am') return 'am';
+    if (k === 'pm') return 'pm';
+    return 'both';
+  };
+
+  const ordered = (d.shelf.use || []).slice()
+    .sort((a, b) => slotOf(a.when) - slotOf(b.when));
+
   h += '<div class="card"><h2>Your shelf tonight</h2>'
-     + '<p class="rhint">Tap any product for the reason.</p><div class="rows">';
-  (d.shelf.use||[]).forEach(i => h += row(i.product, i.when || 'use', 'use', i.why));
+     + '<p class="rhint">Morning first. Tap any product for the reason.</p><div class="rows">';
+  ordered.forEach(i => h += row(i.product, i.when || 'use', slotClass(i.when), i.why));
   (d.shelf.skip||[]).forEach(i => h += row(i.product, 'skip', 'skip', i.why));
   h += '</div>';
   h += '</div>';

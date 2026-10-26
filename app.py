@@ -60,9 +60,20 @@ def plan():
             "reasons": screen["medical_reasons"],
         })
 
+    # Room settings. Indoor temperature is the largest source of error in the
+    # whole model, so letting the user state theirs is worth more than any
+    # refinement to the formula.
+    try:
+        room_temp = float(data.get("indoor_temp_c")) if data.get("indoor_temp_c") else None
+    except (TypeError, ValueError):
+        room_temp = None
+    if room_temp is not None:
+        room_temp = max(10.0, min(32.0, room_temp))
+    humidifier = bool(data.get("humidifier"))
+
     weather = fetch(city)
-    analysis = analysis_to_dict(analyse(weather))
-    outlook = build_outlook(weather.get("forecast", []))
+    analysis = analysis_to_dict(analyse(weather, room_temp, humidifier))
+    outlook = build_outlook(weather.get("forecast", []), room_temp, humidifier)
 
     result = run_pipeline(analysis, screen["safe_shelf"], screen["safe_wardrobe"],
                           outlook=outlook)

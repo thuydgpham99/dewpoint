@@ -136,6 +136,18 @@ def t_live_model():
     return f"{config.MODEL} reachable, {r.usage.total_tokens} tokens"
 
 
+def t_room_settings():
+    from climate import indoor_conditions
+    base = indoor_conditions(2.0, -1.0)
+    cold = indoor_conditions(2.0, -1.0, indoor_temp_c=17.0)
+    warm = indoor_conditions(2.0, -1.0, indoor_temp_c=24.0)
+    hum = indoor_conditions(2.0, -1.0, humidifier=True)
+    assert cold["indoor_rh"] > base["indoor_rh"] > warm["indoor_rh"], (cold, base, warm)
+    assert hum["humidified"] and hum["indoor_rh"] == 45.0, hum
+    return (f"17C {cold['indoor_rh']:.1f}% / 20.5C {base['indoor_rh']:.1f}% / "
+            f"24C {warm['indoor_rh']:.1f}% / humidifier 45%")
+
+
 def t_outlook():
     from climate import build_outlook
     series = [
@@ -188,7 +200,8 @@ for name, fn in [
     ("live weather", t_live_weather), ("injection defence", t_injection),
     ("medical boundary", t_medical), ("receipt parsing", t_receipts),
     ("purchase context", t_purchase_context), ("morning/afternoon", t_swing),
-    ("degraded pipeline", t_degraded_pipeline), ("outlook", t_outlook),
+    ("degraded pipeline", t_degraded_pipeline), ("room settings", t_room_settings),
+    ("outlook", t_outlook),
     ("live model call", t_live_model), ("http routes", t_routes),
     ("deliverables", t_deliverables), ("no secrets", t_no_secrets),
 ]:

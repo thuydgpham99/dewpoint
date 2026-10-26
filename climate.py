@@ -39,7 +39,13 @@ def absolute_humidity(temp_c: float, dew_point_c: float) -> float:
     return 2.1674 * (e * 100) / (273.15 + temp_c) / 100
 
 
-def indoor_conditions(temp_c: float, dew_point_c: float) -> dict:
+# A humidistat is typically set around here, and a running humidifier holds
+# the room near it regardless of what the outdoor air was carrying.
+HUMIDIFIER_TARGET_RH = 45.0
+
+
+def indoor_conditions(temp_c: float, dew_point_c: float,
+                      indoor_temp_c: float = None, humidifier: bool = False) -> dict:
     """The headline number, and how the building got there.
 
     Two very different processes dry indoor air, and which one applies depends
@@ -60,6 +66,8 @@ def indoor_conditions(temp_c: float, dew_point_c: float) -> dict:
     Returns the indoor RH plus the mode and the effective dew point, so the
     interface can explain which mechanism is at work.
     """
+    override = indoor_temp_c is not None
+
     if temp_c >= COOLING_THRESHOLD_C:
         # Air crossing the coil leaves close to saturated at the coil
         # temperature. Not all of it touches the coil though -- some bypasses
@@ -78,11 +86,24 @@ def indoor_conditions(temp_c: float, dew_point_c: float) -> dict:
         indoor_temp = INDOOR_TEMP_C
         mode = "heated"
 
+    if override:
+        indoor_temp = indoor_temp_c
+
     e = actual_vapor_pressure(effective_dew)
     es_indoor = saturation_vapor_pressure(indoor_temp)
     rh = max(0.0, min(100.0, (e / es_indoor) * 100))
-    return {"indoor_rh": rh, "mode": mode,
-            "effective_dew_point_c": effective_dew, "indoor_temp_c": indoor_temp}
+
+    humidified = False
+    if humidifier and rh < HUMIDIFIER_TARGET_RH:
+        # A humidifier adds moisture the outdoor air never had, so the dew
+        # point derivation no longer describes the room. It holds near its
+        # setpoint instead.
+        rh = HUMIDIFIER_TARGET_RH
+        humidified = True
+
+    return {"indoor_rh": rh, "mode": mode, "humidified": humidified,
+            "effective_dew_point_c": effective_dew, "indoor_temp_c": indoor_temp,
+            "assumed_temp": not override}
 
 
 def indoor_relative_humidity(dew_point_c: float, indoor_temp_c: float = INDOOR_TEMP_C) -> float:
@@ -315,6 +336,8 @@ class DayAnalysis:
     band: str = ""
     band_note: str = ""
     mode: str = "heated"
+    humidified: bool = False
+    assumed_temp: bool = True
     effective_dew_point_c: float = 0.0
     indoor_temp_c: float = 0.0
     swing_c: float = 0.0
@@ -324,12 +347,13 @@ class DayAnalysis:
     alerts: list = field(default_factory=list)
 
 
-def analyse(weather: dict) -> DayAnalysis:
+def analyse(weather: dict, indoor_temp_c: float = None,
+            humidifier: bool = False) -> DayAnalysis:
     """Turn a raw forecast into every number the rest of the app needs."""
     temp = weather["temp_c"]
     dew = weather["dew_point_c"]
 
-    cond = indoor_conditions(temp, dew)
+    cond = indoor_conditions(temp, dew, indoor_temp_c, humidifier)
     indoor_rh = cond["indoor_rh"]
     band, band_note = dryness_band(indoor_rh)
 
@@ -348,6 +372,8 @@ def analyse(weather: dict) -> DayAnalysis:
         band=band,
         band_note=band_note,
         mode=cond["mode"],
+        humidified=cond["humidified"],
+        assumed_temp=cond["assumed_temp"],
         effective_dew_point_c=round(cond["effective_dew_point_c"], 1),
         indoor_temp_c=cond["indoor_temp_c"],
     )
@@ -370,7 +396,8 @@ def analysis_to_dict(a: DayAnalysis) -> dict:
         "absolute_humidity": a.absolute_humidity,
         "uv_index": a.uv_index, "precip_mm": a.precip_mm, "wind_kph": a.wind_kph,
         "band": a.band, "band_note": a.band_note,
-        "mode": a.mode, "effective_dew_point_c": a.effective_dew_point_c,
+        "mode": a.mode, "humidified": a.humidified, "assumed_temp": a.assumed_temp,
+        "effective_dew_point_c": a.effective_dew_point_c,
         "indoor_temp_c": a.indoor_temp_c,
         "skin": a.skin, "fabric": a.fabric, "swing": a.swing, "alerts": a.alerts,
     }
@@ -392,7 +419,8 @@ def band_rank(band: str) -> int:
     return BAND_ORDER.index(band) if band in BAND_ORDER else 2
 
 
-def build_outlook(series: list) -> dict:
+def build_outlook(series: list, indoor_temp_c: float = None,
+                  humidifier: bool = False) -> dict:
     """A week of indoor conditions, with a full routine and outfit per day.
 
     Every day in the week gets the same treatment today gets -- dryness band,
@@ -407,7 +435,8 @@ def build_outlook(series: list) -> dict:
 
     days = []
     for i, day in enumerate(series):
-        cond = indoor_conditions(day["temp_c"], day["dew_point_c"])
+        cond = indoor_conditions(day["temp_c"], day["dew_point_c"],
+                                 indoor_temp_c, humidifier)
         band, band_note = dryness_band(cond["indoor_rh"])
         skin = SKIN_RULES[band]
         sw = swing_plan(day["temp_min_c"], day["temp_max_c"])

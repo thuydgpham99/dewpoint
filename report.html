@@ -59,7 +59,7 @@ code{background:#f3ede6;padding:1px 5px;border-radius:3px;font-size:9pt;
 <b>Date:</b> 25 October 2026<br>
 <b>Repository:</b> <a href="https://github.com/thuydgpham99/dewpoint">github.com/thuydgpham99/dewpoint</a><br>
 <b>Model:</b> gpt-5.6-luna via Portkey &nbsp;·&nbsp;
-<b>Runs measured for this report:</b> 50<br><br>
+<b>Runs measured for this report:</b> 60<br><br>
 DewPoint derives the relative humidity your skin actually sits in — indoor air, not the
 outdoor figure your weather app reports — and uses that one number to plan both your
 skincare routine and what you wear.
@@ -316,22 +316,22 @@ outfit split across the day, the afternoon repeating the morning minus a layer.<
 
 <p>Every figure in this section is read from the provider's own <code>usage</code> field
 and logged to <code>runs/usage.jsonl</code> by <code>meter.py</code>. Nothing is estimated.
-Measured across <b>50 runs</b>.</p>
+Measured across <b>60 runs</b>.</p>
 
 <table>
 <tr><th>Measure</th><th>Per run (mean)</th></tr>
-<tr><td>Input tokens</td><td class=n>1,778</td></tr>
+<tr><td>Input tokens</td><td class=n>1,804</td></tr>
 <tr><td>Cached input tokens</td><td class=n>0</td></tr>
-<tr><td>Output tokens (visible + reasoning)</td><td class=n>1,236</td></tr>
-<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>808 (65%)</td></tr>
-<tr><td><b>Total tokens</b></td><td class=n><b>3,014</b></td></tr>
+<tr><td>Output tokens (visible + reasoning)</td><td class=n>1,237</td></tr>
+<tr><td>&nbsp;&nbsp;of which hidden reasoning tokens</td><td class=n>809 (65%)</td></tr>
+<tr><td><b>Total tokens</b></td><td class=n><b>3,041</b></td></tr>
 <tr><td><b>Cost per run</b></td><td class=n><b>$0.00101</b></td></tr>
 </table>
 
 <h3>The finding that matters</h3>
 <div class="box warn"><h4>65% of output tokens are never shown to the user</h4>
 <p style="margin:0">This model reasons before answering, and reasoning tokens bill at the
-output rate. On a typical run 808 of 1,236 output tokens
+output rate. On a typical run 809 of 1,237 output tokens
 were internal. The visible answer — the part the user reads — is roughly a third of what
 is paid for. Any cost model built on visible output length would understate the bill by
 about 3×.</p></div>
@@ -344,18 +344,18 @@ $0.15/1M input, $0.075/1M cached, $0.6/1M output.</p>
 <table>
 <tr><th>Scale</th><th>Runs / month</th><th>Cost / month</th><th>Cost / year</th></tr>
 <tr><td>One user</td><td class=n>20</td>
-<td class=n>$0.0202</td>
+<td class=n>$0.0203</td>
 <td class=n>$0.24</td></tr>
 <tr><td>100 users</td><td class=n>2,000</td>
-<td class=n>$2.02</td>
-<td class=n>$24.20</td></tr>
+<td class=n>$2.03</td>
+<td class=n>$24.31</td></tr>
 <tr><td>10,000 users</td><td class=n>200,000</td>
-<td class=n>$201.65</td>
-<td class=n>$2,419.78</td></tr>
+<td class=n>$202.57</td>
+<td class=n>$2,430.88</td></tr>
 </table>
 
 <p>At 10,000 users the model bill is roughly
-<b>$2,420 per year</b> — about
+<b>$2,431 per year</b> — about
 <b>$0.24 per user per year</b>. Weather costs nothing
 (Open-Meteo, no key). The deterministic engine costs nothing. Inference is effectively
 the entire marginal cost of the product.</p>
@@ -498,7 +498,7 @@ bounded at roughly $0.00360, about
 <tr><td>Wasted product value identified, one shelf</td><td class=n>$182.00</td><td>measured, Fig. 6</td></tr>
 <tr><td>Share of shelf value past its window</td><td class=n>56%</td><td>measured, Fig. 6</td></tr>
 <tr><td>Cost to run DewPoint, per user per year</td><td class=n>$0.24</td><td>measured, §4</td></tr>
-<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~752×</td><td>derived</td></tr>
+<tr><td>Ratio of value surfaced to cost of running</td><td class=n>~749×</td><td>derived</td></tr>
 <tr><td>Time to a decision</td><td class=n>~9 s</td><td>measured, §4</td></tr>
 <tr><td>People who guessed the wrong band</td><td class=n>4 of 5</td><td>measured, below</td></tr>
 <tr><td>Mean error in those guesses</td><td class=n>22.2 pts</td><td>measured, below</td></tr>
@@ -552,11 +552,15 @@ people already carry in their heads.</p>
 
 <h2>7. Limits</h2>
 <ul>
-<li><b>Indoor temperature is assumed, not measured.</b> The model fixes indoor air at
-20.5 °C. A cold flat or an overheated library shifts the result by several points. The
-calculation is only as good as that assumption, and the app does not currently ask.</li>
-<li><b>No humidifier, no commute.</b> A humidifier invalidates the indoor estimate
-entirely. So does spending the day outdoors.</li>
+<li><b>Indoor temperature is stated, not measured.</b> The app asks for it and defaults to
+20.5 °C, which is the right trade — this was the largest error source and a slider costs the
+user two seconds. But a stated figure is still a guess: people are poor judges of room
+temperature, and the honest fix is a sensor reading, not a control.</li>
+<li><b>The humidifier model is crude.</b> Switching it on pins the room to 45%, the usual
+humidistat setpoint. Real units undershoot in very dry air, cycle, and are often run in one
+room of several. The toggle is better than ignoring it and worse than measuring it.</li>
+<li><b>No commute.</b> The whole model assumes you are indoors. A day spent outside, or a
+long walk in cold wind, is not represented at all.</li>
 <li><b>The rules are editorial.</b> Dryness bands and fabric mappings reflect published
 dermatology guidance and my own reading, but they are thresholds I chose. They are
 defensible, not validated.</li>
@@ -577,8 +581,10 @@ that would actually matter and the one §8 proposes measuring.</li>
 <li><b>Photograph the shelf.</b> The receipt path works but asks the user to find an email.
 A vision model reading a shelf photo removes that friction entirely, and was cut from this
 build only for time.</li>
-<li><b>Ask for indoor temperature once</b>, or read it from a smart thermostat. This is the
-largest single source of error and the cheapest to fix.</li>
+<li><b>Read indoor temperature from a sensor</b> rather than asking. The slider closed most
+of the gap — moving from 17 °C to 24 °C changes the computed figure by about ten points and
+can change the advice band outright — but a thermostat or a phone's barometer-adjacent
+sensors would remove the guess entirely.</li>
 <li><b>Validate the thresholds.</b> Ten users, four weeks, a daily one-question check-in on
 skin tightness correlated against computed indoor RH. The guessing exercise establishes that
 people do not know the number; this would establish whether knowing it helps, which is the

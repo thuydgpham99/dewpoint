@@ -670,11 +670,15 @@ people already carry in their heads.</p>
 
 <h2>7. Limits</h2>
 <ul>
-<li><b>Indoor temperature is assumed, not measured.</b> The model fixes indoor air at
-20.5 °C. A cold flat or an overheated library shifts the result by several points. The
-calculation is only as good as that assumption, and the app does not currently ask.</li>
-<li><b>No humidifier, no commute.</b> A humidifier invalidates the indoor estimate
-entirely. So does spending the day outdoors.</li>
+<li><b>Indoor temperature is stated, not measured.</b> The app asks for it and defaults to
+20.5 °C, which is the right trade — this was the largest error source and a slider costs the
+user two seconds. But a stated figure is still a guess: people are poor judges of room
+temperature, and the honest fix is a sensor reading, not a control.</li>
+<li><b>The humidifier model is crude.</b> Switching it on pins the room to 45%, the usual
+humidistat setpoint. Real units undershoot in very dry air, cycle, and are often run in one
+room of several. The toggle is better than ignoring it and worse than measuring it.</li>
+<li><b>No commute.</b> The whole model assumes you are indoors. A day spent outside, or a
+long walk in cold wind, is not represented at all.</li>
 <li><b>The rules are editorial.</b> Dryness bands and fabric mappings reflect published
 dermatology guidance and my own reading, but they are thresholds I chose. They are
 defensible, not validated.</li>
@@ -695,8 +699,10 @@ that would actually matter and the one §8 proposes measuring.</li>
 <li><b>Photograph the shelf.</b> The receipt path works but asks the user to find an email.
 A vision model reading a shelf photo removes that friction entirely, and was cut from this
 build only for time.</li>
-<li><b>Ask for indoor temperature once</b>, or read it from a smart thermostat. This is the
-largest single source of error and the cheapest to fix.</li>
+<li><b>Read indoor temperature from a sensor</b> rather than asking. The slider closed most
+of the gap — moving from 17 °C to 24 °C changes the computed figure by about ten points and
+can change the advice band outright — but a thermostat or a phone's barometer-adjacent
+sensors would remove the guess entirely.</li>
 <li><b>Validate the thresholds.</b> Ten users, four weeks, a daily one-question check-in on
 skin tightness correlated against computed indoor RH. The guessing exercise establishes that
 people do not know the number; this would establish whether knowing it helps, which is the
