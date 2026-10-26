@@ -115,6 +115,41 @@ def t_degraded_pipeline():
     return "deterministic fallback produces a full plan with no model"
 
 
+def t_live_model():
+    """The dependency trap that caused a silent fallback.
+
+    openai 1.51 passes a `proxies` argument that httpx removed in 0.28. With an
+    unpinned install the model calls raise TypeError, the pipeline quietly
+    drops to its deterministic engine, and everything still "works" -- which is
+    exactly why this needs an explicit check.
+    """
+    import config
+    if not config.PORTKEY_API_KEY:
+        return "skipped, no key present"
+    from openai import OpenAI
+    c = OpenAI(api_key=config.PORTKEY_API_KEY, base_url=config.PORTKEY_BASE_URL, timeout=40.0)
+    r = c.chat.completions.create(
+        model=config.MODEL,
+        messages=[{"role": "user", "content": "Reply with the single word: ok"}],
+        max_completion_tokens=400)
+    assert r.usage.prompt_tokens > 0
+    return f"{config.MODEL} reachable, {r.usage.total_tokens} tokens"
+
+
+def t_outlook():
+    from climate import build_outlook
+    series = [
+        {"date": "2026-10-25", "temp_c": 10, "temp_min_c": 6, "temp_max_c": 14,
+         "dew_point_c": 6, "uv_index": 2, "precip_mm": 0, "wind_kph": 10},
+        {"date": "2026-10-26", "temp_c": 2, "temp_min_c": -2, "temp_max_c": 5,
+         "dew_point_c": -12, "uv_index": 1, "precip_mm": 0, "wind_kph": 20},
+    ]
+    o = build_outlook(series)
+    assert len(o["days"]) == 2
+    assert o["warning"] and o["warning"]["kind"] == "drying", o["warning"]
+    return f"{len(o['days'])} days, warning: {o['warning']['kind']}"
+
+
 def t_routes():
     import app as application
     c = application.app.test_client()
@@ -153,7 +188,8 @@ for name, fn in [
     ("live weather", t_live_weather), ("injection defence", t_injection),
     ("medical boundary", t_medical), ("receipt parsing", t_receipts),
     ("purchase context", t_purchase_context), ("morning/afternoon", t_swing),
-    ("degraded pipeline", t_degraded_pipeline), ("http routes", t_routes),
+    ("degraded pipeline", t_degraded_pipeline), ("outlook", t_outlook),
+    ("live model call", t_live_model), ("http routes", t_routes),
     ("deliverables", t_deliverables), ("no secrets", t_no_secrets),
 ]:
     check(name, fn)

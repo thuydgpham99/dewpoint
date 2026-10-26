@@ -374,3 +374,89 @@ def analysis_to_dict(a: DayAnalysis) -> dict:
         "indoor_temp_c": a.indoor_temp_c,
         "skin": a.skin, "fabric": a.fabric, "swing": a.swing, "alerts": a.alerts,
     }
+
+
+# ---------------------------------------------------------------------------
+# Outlook
+#
+# Barrier care is slow. Switching to an occlusive the morning your skin already
+# hurts is too late -- it takes a day or two of consistent use to matter. So the
+# useful question is not "what is the air doing" but "what is it about to do,
+# and do I need to start now".
+# ---------------------------------------------------------------------------
+BAND_ORDER = ["severe", "high", "moderate", "comfortable", "humid"]
+
+
+def band_rank(band: str) -> int:
+    """Lower is drier."""
+    return BAND_ORDER.index(band) if band in BAND_ORDER else 2
+
+
+def build_outlook(series: list) -> dict:
+    """Indoor conditions for each forecast day, plus any warning worth giving."""
+    if not series:
+        return {"days": [], "warning": None}
+
+    days = []
+    for i, day in enumerate(series):
+        cond = indoor_conditions(day["temp_c"], day["dew_point_c"])
+        band, _note = dryness_band(cond["indoor_rh"])
+        days.append({
+            "date": day["date"],
+            "indoor_rh": round(cond["indoor_rh"], 1),
+            "band": band,
+            "mode": cond["mode"],
+            "temp_min_c": round(day["temp_min_c"], 1),
+            "temp_max_c": round(day["temp_max_c"], 1),
+            "offset": i,
+        })
+
+    today = days[0]
+    warning = None
+
+    # The driest day ahead, if it is meaningfully drier than today.
+    ahead = days[1:]
+    if ahead:
+        driest = min(ahead, key=lambda d: d["indoor_rh"])
+        drop = today["indoor_rh"] - driest["indoor_rh"]
+        worsens = band_rank(driest["band"]) < band_rank(today["band"])
+
+        if worsens and drop >= 5:
+            when = {1: "tomorrow", 2: "in two days", 3: "in three days"}.get(
+                driest["offset"], f"in {driest['offset']} days")
+            warning = {
+                "kind": "drying",
+                "when": when,
+                "offset": driest["offset"],
+                "from_rh": today["indoor_rh"],
+                "to_rh": driest["indoor_rh"],
+                "from_band": today["band"],
+                "to_band": driest["band"],
+                "text": (
+                    f"The air dries out {when}: indoor humidity falls from "
+                    f"{today['indoor_rh']}% to {driest['indoor_rh']}%, moving from "
+                    f"{today['band']} to {driest['band']}. Barrier care takes a day or two "
+                    f"to build up, so start tonight rather than when it bites."
+                ),
+            }
+        elif ahead:
+            wettest = max(ahead, key=lambda d: d["indoor_rh"])
+            rise = wettest["indoor_rh"] - today["indoor_rh"]
+            if band_rank(wettest["band"]) > band_rank(today["band"]) and rise >= 8:
+                when = {1: "tomorrow", 2: "in two days", 3: "in three days"}.get(
+                    wettest["offset"], f"in {wettest['offset']} days")
+                warning = {
+                    "kind": "easing",
+                    "when": when,
+                    "offset": wettest["offset"],
+                    "from_rh": today["indoor_rh"],
+                    "to_rh": wettest["indoor_rh"],
+                    "from_band": today["band"],
+                    "to_band": wettest["band"],
+                    "text": (
+                        f"Conditions ease {when}, up to {wettest['indoor_rh']}%. If you have "
+                        f"been holding off on actives, that is the window to restart them."
+                    ),
+                }
+
+    return {"days": days, "warning": warning}

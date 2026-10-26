@@ -392,3 +392,32 @@ table.tk td.num{text-align:right;font-family:ui-monospace,Menlo,monospace}
   transition:all .16s}
 .srow button:hover{border-style:solid;border-color:var(--accent);color:var(--accent-2);
   background:var(--p-rose);transform:translateY(-1px)}
+
+/* ---- outlook ---- */
+.outlook{background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-lg);
+  padding:24px 28px;margin-bottom:22px;box-shadow:var(--sh-2)}
+.ohead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;
+  gap:14px;flex-wrap:wrap}
+.ohead h3{font-family:var(--serif);font-size:19px;margin:0;font-weight:500;
+  letter-spacing:-.3px;font-variation-settings:'opsz' 40}
+.ohead .loc{font-size:12px;color:var(--ink-3)}
+.odays{display:flex;gap:9px;align-items:flex-end}
+.oday{flex:1;text-align:center;padding:11px 5px 9px;border-radius:var(--r);
+  transition:background .2s}
+.oday:hover{background:var(--p-lilac)}
+.oday.now{background:linear-gradient(180deg,var(--p-rose),transparent 85%)}
+.orh{font-family:var(--serif);font-size:17px;font-weight:500;letter-spacing:-.3px}
+.obar{height:56px;display:flex;align-items:flex-end;justify-content:center;margin:7px 0 8px}
+.obar span{display:block;width:60%;max-width:34px;border-radius:5px 5px 0 0;
+  transition:height .7s cubic-bezier(.22,.8,.26,1)}
+.oband{font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:600}
+.owhen{font-size:11px;color:var(--ink-4);margin-top:4px;font-weight:500}
+.oday.now .owhen{color:var(--accent-2);font-weight:700}
+.owarn{margin-top:18px;padding:14px 17px;border-radius:var(--r);font-size:13.5px;
+  line-height:1.58;color:var(--ink-2)}
+.owarn b{color:var(--ink);font-weight:600;display:block;margin-bottom:3px}
+.owarn.drying{background:linear-gradient(135deg,var(--p-peach),var(--card));
+  border-left:3px solid #eba98f}
+.owarn.easing{background:linear-gradient(135deg,var(--p-mint),var(--card));
+  border-left:3px solid #8cc4a3}

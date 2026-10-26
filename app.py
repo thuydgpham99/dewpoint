@@ -5,7 +5,7 @@ from flask import Flask, jsonify, render_template, request
 
 import config
 from agents import run_pipeline
-from climate import analyse, analysis_to_dict
+from climate import analyse, analysis_to_dict, build_outlook
 from guard import screen_request
 from meter import aggregate, all_runs
 from receipts import (add_items, expiry_report, load_inventory, monthly_spend,
@@ -55,8 +55,10 @@ def plan():
 
     weather = fetch(city)
     analysis = analysis_to_dict(analyse(weather))
+    outlook = build_outlook(weather.get("forecast", []))
 
-    result = run_pipeline(analysis, screen["safe_shelf"], screen["safe_wardrobe"])
+    result = run_pipeline(analysis, screen["safe_shelf"], screen["safe_wardrobe"],
+                          outlook=outlook)
 
     # Frame any suggestion against what the user already owns and already spent,
     # so the app never recommends a purchase without that context.
@@ -68,6 +70,7 @@ def plan():
     return jsonify({
         "purchase_context": context,
         "mismatch": mismatch,
+        "outlook": outlook,
         "blocked": None,
         "weather_source": weather.get("source", ""),
         "analysis": analysis,

@@ -303,6 +303,38 @@ function animateGauge() {
   if (out) countUp(out, parseFloat(out.dataset.v), 0);
 }
 
+/* ---------------- the days ahead ---------------- */
+const DAYNAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function outlook(o) {
+  if (!o || !(o.days || []).length) return '';
+  const max = Math.max(...o.days.map(d => d.indoor_rh), 60);
+
+  const cells = o.days.map(d => {
+    const when = d.offset === 0 ? 'Today'
+      : DAYNAMES[new Date(d.date + 'T12:00:00').getDay()];
+    const h = Math.max(6, (d.indoor_rh / max) * 56);
+    return `<div class="oday ${d.offset === 0 ? 'now' : ''}" title="${d.date}">
+      <div class="orh">${d.indoor_rh}%</div>
+      <div class="obar"><span style="height:${h}px;background:${bandColour(d.band)}"></span></div>
+      <div class="oband">${esc(d.band)}</div>
+      <div class="owhen">${esc(when)}</div>
+    </div>`;
+  }).join('');
+
+  const w = o.warning;
+  const warn = w ? `<div class="owarn ${w.kind}">
+      <b>${w.kind === 'drying' ? 'Getting drier' : 'Easing off'}</b> ${esc(w.text)}
+    </div>` : '';
+
+  return `<div class="outlook rv">
+    <div class="ohead"><h3>The days ahead</h3>
+      <span class="loc">indoor humidity, computed per day</span></div>
+    <div class="odays">${cells}</div>
+    ${warn}
+  </div>`;
+}
+
 function bandColour(b) {
   return {severe:'#a8431f',high:'#b4551f',moderate:'#8a6a1f',
           comfortable:'#2f7a52',humid:'#2b6f92'}[b] || '#8a8178';
@@ -406,6 +438,8 @@ function render(d) {
     <div><div class="v">${a.precip_mm}mm</div><div class="k">rain</div></div>
     <div><div class="v">${a.wind_kph}</div><div class="k">wind kph</div></div>
   </div>`;
+
+  h += outlook(d.outlook);
 
   if (d.brief) h += `<div class="brief rv">${esc(d.brief)}</div>`;
 

@@ -188,7 +188,8 @@ Return JSON exactly:
 # ---------------------------------------------------------------------------
 # Agent 3 -- Briefer
 # ---------------------------------------------------------------------------
-def brief_agent(client, meter, analysis: dict, shelf: dict, style: dict) -> str:
+def brief_agent(client, meter, analysis: dict, shelf: dict, style: dict,
+                outlook: dict = None) -> str:
     alerts = "\n".join(f"- {a['title']}: {a['body']}" for a in analysis["alerts"]) or "- none"
     prompt = f"""Write the morning brief. Three short paragraphs, no headings, no lists,
 under 140 words total. Second person. Calm and specific.
@@ -202,6 +203,9 @@ one conflict that matters most between skin and clothing.
 
 Cross-domain alerts from the engine:
 {alerts}
+
+{("A change is coming, and it matters more than today: " + outlook["warning"]["text"]
+   + " Work this into paragraph 2.") if (outlook or {}).get("warning") else ""}
 
 Morning outfit: {json.dumps(style.get('morning', []))}
 Afternoon: {json.dumps(style.get('afternoon', []))}
@@ -243,7 +247,8 @@ def offline_pipeline(analysis: dict, shelf_text: str) -> dict:
     }
 
 
-def run_pipeline(analysis: dict, shelf_text: str, wardrobe_text: str) -> dict:
+def run_pipeline(analysis: dict, shelf_text: str, wardrobe_text: str,
+                 outlook: dict = None) -> dict:
     """Full run. Returns the content plus the metered usage summary."""
     run_id = uuid.uuid4().hex[:8]
     meter = RunMeter(run_id, config.MODEL)
@@ -256,7 +261,7 @@ def run_pipeline(analysis: dict, shelf_text: str, wardrobe_text: str) -> dict:
         if meter.totals["output_tokens"] + meter.totals["input_tokens"] > config.MAX_TOKENS_PER_RUN:
             brief = "Spend ceiling reached for this run; brief omitted."
         else:
-            brief = brief_agent(client, meter, analysis, shelf, style)
+            brief = brief_agent(client, meter, analysis, shelf, style, outlook)
 
         result = {"shelf": shelf, "style": style, "brief": brief, "degraded": False}
     except Exception as exc:

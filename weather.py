@@ -57,6 +57,38 @@ def fixture_for(city: str) -> dict:
     return dict(first, source="bundled sample (offline)")
 
 
+def _daily_series(daily: dict, label: str) -> list:
+    """The next few days, in the same shape the climate engine expects.
+
+    Day 0 is today. Used to warn about a change in the air before it arrives,
+    since barrier care needs a couple of days of lead time to be any use.
+    """
+    out = []
+    dates = daily.get("time", [])
+    for i, day in enumerate(dates):
+        try:
+            tmax = daily["temperature_2m_max"][i]
+            tmin = daily["temperature_2m_min"][i]
+            dew = daily["dew_point_2m_mean"][i]
+        except (KeyError, IndexError, TypeError):
+            continue
+        if dew is None or tmax is None:
+            continue
+        out.append({
+            "date": day,
+            "location": label,
+            "temp_c": (tmax + tmin) / 2,
+            "temp_min_c": tmin,
+            "temp_max_c": tmax,
+            "dew_point_c": dew,
+            "outdoor_rh": 0.0,
+            "uv_index": (daily.get("uv_index_max") or [0])[i] or 0.0,
+            "precip_mm": (daily.get("precipitation_sum") or [0])[i] or 0.0,
+            "wind_kph": (daily.get("wind_speed_10m_max") or [0])[i] or 0.0,
+        })
+    return out
+
+
 def fetch(city: str) -> dict:
     """Return the normalised fields the climate engine needs."""
     if os.getenv("DEWPOINT_OFFLINE") == "1":
@@ -74,9 +106,10 @@ def fetch(city: str) -> dict:
             "longitude": place["longitude"],
             "current": "temperature_2m,relative_humidity_2m,dew_point_2m,"
                        "precipitation,wind_speed_10m",
-            "daily": "temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_sum",
+            "daily": "temperature_2m_max,temperature_2m_min,dew_point_2m_mean,"
+                     "uv_index_max,precipitation_sum,wind_speed_10m_max",
             "timezone": "auto",
-            "forecast_days": 1,
+            "forecast_days": 4,
         })
         cur = fc["current"]
         daily = fc["daily"]
@@ -98,6 +131,7 @@ def fetch(city: str) -> dict:
             "precip_mm": daily["precipitation_sum"][0] or 0.0,
             "wind_kph": cur["wind_speed_10m"],
             "source": "Open-Meteo (live)",
+            "forecast": _daily_series(daily, label),
         }
     except Exception as exc:  # network down, bad city, API change
         fb = fixture_for(city)
