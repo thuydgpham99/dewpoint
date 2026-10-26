@@ -393,22 +393,46 @@ def band_rank(band: str) -> int:
 
 
 def build_outlook(series: list) -> dict:
-    """Indoor conditions for each forecast day, plus any warning worth giving."""
+    """A week of indoor conditions, with a full routine and outfit per day.
+
+    Every day in the week gets the same treatment today gets -- dryness band,
+    which products to favour and avoid, how many layers, which fabrics -- all
+    from the deterministic rules. No model is called for the forecast days.
+    Seven extra model calls per run would roughly octuple the cost for advice
+    the engine can already derive, and the rules are the part that has to be
+    right anyway.
+    """
     if not series:
         return {"days": [], "warning": None}
 
     days = []
     for i, day in enumerate(series):
         cond = indoor_conditions(day["temp_c"], day["dew_point_c"])
-        band, _note = dryness_band(cond["indoor_rh"])
+        band, band_note = dryness_band(cond["indoor_rh"])
+        skin = SKIN_RULES[band]
+        sw = swing_plan(day["temp_min_c"], day["temp_max_c"])
+        alerts = cross_domain_alerts(band, day.get("uv_index", 0) or 0,
+                                     day.get("precip_mm", 0) or 0,
+                                     day.get("wind_kph", 0) or 0, day["temp_c"])
         days.append({
             "date": day["date"],
             "indoor_rh": round(cond["indoor_rh"], 1),
             "band": band,
+            "band_note": band_note,
             "mode": cond["mode"],
             "temp_min_c": round(day["temp_min_c"], 1),
             "temp_max_c": round(day["temp_max_c"], 1),
+            "dew_point_c": round(day["dew_point_c"], 1),
+            "uv_index": round(day.get("uv_index", 0) or 0, 1),
+            "precip_mm": round(day.get("precip_mm", 0) or 0, 1),
+            "wind_kph": round(day.get("wind_kph", 0) or 0, 1),
             "offset": i,
+            "skin": {"use": skin["use"], "skip": skin["skip"], "why": skin["why"]},
+            "clothes": {
+                "morning": sw["morning"], "afternoon": sw["afternoon"],
+                "verdict": sw["verdict"], "swing_c": sw["swing_c"],
+            },
+            "alerts": [{"title": al["title"], "severity": al["severity"]} for al in alerts],
         })
 
     today = days[0]

@@ -8,10 +8,12 @@
 
 <header class="top">
   <div class="brand"><span class="dot"></span><h1>DewPoint</h1></div>
-  <p class="tagline">Your weather app reports <b>outdoor</b> humidity. Your skin spends the
-  day in heated <b>indoor</b> air, which is far drier — often by thirty points or more.
-  DewPoint derives the humidity your skin actually sits in from the dew point, then plans
-  your routine and your outfit around that one number.</p>
+  <p class="tagline">The humidity on your weather app is <b>outside</b>. Your skin is
+  <b>inside</b> — where heating strips the air in winter and air conditioning wrings it out
+  in summer. Either way it is nothing like the number you were shown.</p>
+  <p class="tagline2">DewPoint works out the humidity your skin is actually in, then plans
+  your routine and your outfit around it. Across 16 cities, <b>9 of them land in a different
+  advice band</b> once you compute it.</p>
   <div class="envbar">
     <span class="pill">{{ model }}</span>
     {% if key_present %}<span class="pill">key loaded</span>{% else %}<span class="pill warn">no key — degraded mode</span>{% endif %}
@@ -308,18 +310,20 @@ const DAYNAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function outlook(o) {
   if (!o || !(o.days || []).length) return '';
+  window._outlookDays = o.days;
   const max = Math.max(...o.days.map(d => d.indoor_rh), 60);
 
   const cells = o.days.map(d => {
     const when = d.offset === 0 ? 'Today'
       : DAYNAMES[new Date(d.date + 'T12:00:00').getDay()];
-    const h = Math.max(6, (d.indoor_rh / max) * 56);
-    return `<div class="oday ${d.offset === 0 ? 'now' : ''}" title="${d.date}">
-      <div class="orh">${d.indoor_rh}%</div>
-      <div class="obar"><span style="height:${h}px;background:${bandColour(d.band)}"></span></div>
-      <div class="oband">${esc(d.band)}</div>
-      <div class="owhen">${esc(when)}</div>
-    </div>`;
+    const h = Math.max(6, (d.indoor_rh / max) * 54);
+    return `<button type="button" class="oday ${d.offset === 0 ? 'on' : ''}"
+        data-i="${d.offset}" aria-pressed="${d.offset === 0}">
+      <span class="orh">${d.indoor_rh}%</span>
+      <span class="obar"><i style="height:${h}px;background:${bandColour(d.band)}"></i></span>
+      <span class="oband">${esc(d.band)}</span>
+      <span class="owhen">${esc(when)}</span>
+    </button>`;
   }).join('');
 
   const w = o.warning;
@@ -328,12 +332,51 @@ function outlook(o) {
     </div>` : '';
 
   return `<div class="outlook rv">
-    <div class="ohead"><h3>The days ahead</h3>
-      <span class="loc">indoor humidity, computed per day</span></div>
+    <div class="ohead"><h3>The week ahead</h3>
+      <span class="loc">pick a day for its routine and outfit</span></div>
     <div class="odays">${cells}</div>
+    <div id="odetail">${dayDetail(o.days[0])}</div>
     ${warn}
   </div>`;
 }
+
+function dayDetail(d) {
+  if (!d) return '';
+  const sk = d.skin || {}, cl = d.clothes || {};
+  const am = cl.morning || {}, pm = cl.afternoon || {};
+  const when = d.offset === 0 ? 'Today'
+    : new Date(d.date + 'T12:00:00').toLocaleDateString(undefined,
+        { weekday: 'long', day: 'numeric', month: 'short' });
+
+  const row = (k, v) => v ? `<div class="odrow"><span class="odk">${esc(k)}</span>
+    <span class="odv">${v}</span></div>` : '';
+
+  return `<div class="odetail-inner">
+    <div class="odhead">
+      <span class="odwhen">${esc(when)}</span>
+      <span class="odrh" style="color:${bandColour(d.band)}">${d.indoor_rh}% · ${esc(d.band)}</span>
+    </div>
+    ${row('Air', `${d.temp_min_c}–${d.temp_max_c}° · ${esc(d.mode)} · UV ${d.uv_index} · ${d.precip_mm}mm`)}
+    ${row('Why', esc(d.band_note || ''))}
+    ${row('Use', (sk.use||[]).map(x=>`<i>${esc(x)}</i>`).join('') || '—')}
+    ${row('Skip', (sk.skip||[]).length ? sk.skip.map(x=>`<i class="no">${esc(x)}</i>`).join('') : '<span class="odnone">nothing</span>')}
+    ${row('Morning', `${am.layers||'?'} layer(s) · ${esc((am.fabrics||[]).join(', '))}`)}
+    ${row('Afternoon', `${pm.layers||'?'} layer(s) · ${esc((pm.fabrics||[]).join(', '))}`)}
+    ${row('Swing', esc(cl.verdict || ''))}
+    ${row('Watch', (d.alerts||[]).map(x=>esc(x.title)).join(' · '))}
+  </div>`;
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('.oday');
+  if (!b || !window._outlookDays) return;
+  document.querySelectorAll('.oday').forEach(x => {
+    x.classList.remove('on'); x.setAttribute('aria-pressed', 'false');
+  });
+  b.classList.add('on'); b.setAttribute('aria-pressed', 'true');
+  document.getElementById('odetail').innerHTML =
+    dayDetail(window._outlookDays[+b.dataset.i]);
+});
 
 function bandColour(b) {
   return {severe:'#a8431f',high:'#b4551f',moderate:'#8a6a1f',

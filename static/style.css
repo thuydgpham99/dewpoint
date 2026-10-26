@@ -9,7 +9,10 @@
    under prefers-reduced-motion.
    =================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* One typeface throughout. Hierarchy comes from size, weight and tracking
+   rather than from switching families -- it reads as a single designed system
+   instead of two voices. */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
 :root{
   /* Pastel surfaces, deep ink. The tints carry the mood; text and the band
@@ -31,8 +34,8 @@
   --sh-2:0 1px 2px rgba(90,70,100,.05), 0 10px 26px -12px rgba(90,70,100,.15);
   --sh-3:0 1px 2px rgba(90,70,100,.06), 0 22px 48px -20px rgba(90,70,100,.24);
 
-  --serif:'Instrument Serif',"Iowan Old Style",Palatino,Georgia,serif;
   --sans:'Plus Jakarta Sans',ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  --serif:var(--sans);   /* kept as an alias so display rules stay readable */
 
   /* atmosphere, overridden per band */
   --atm-1:rgba(222,160,185,.14); --atm-2:rgba(196,181,232,.12);
@@ -77,7 +80,7 @@ header.top::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1p
 .tagline{color:var(--ink-2);margin:17px 0 0;max-width:60ch;font-size:17px;line-height:1.58}
 .tagline b{color:var(--ink);font-weight:600}
 .envbar{margin-top:20px;font-size:11.5px;color:var(--ink-3);
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;display:flex;
+  font-family:var(--sans);font-variant-numeric:tabular-nums;display:flex;
   align-items:center;gap:8px;flex-wrap:wrap}
 .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:999px;
   background:var(--accent-soft);color:var(--accent-2);font-weight:600;font-size:11px;
@@ -292,7 +295,7 @@ ul.items .w{color:var(--ink-3);font-size:13px;display:block;margin-top:3px;line-
   color:var(--ink-3);margin-top:4px;font-weight:600}
 
 /* ---------------- usage ---------------- */
-.usage{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+.usage{font-family:var(--sans);font-variant-numeric:tabular-nums;font-size:12.5px;
   color:var(--ink-2);background:var(--card);border:1px solid var(--line-2);
   border-radius:var(--r-lg);padding:20px 24px;box-shadow:var(--sh-1)}
 .usage table{width:100%;border-collapse:collapse}
@@ -339,7 +342,7 @@ table.tk th,table.tk td{padding:11px 14px;border-bottom:1px solid var(--line-2);
 table.tk th{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);
   font-weight:700;background:var(--p-lilac)}
 table.tk tr:last-child td{border-bottom:0}
-table.tk td.num{text-align:right;font-family:ui-monospace,Menlo,monospace}
+table.tk td.num{text-align:right;font-family:var(--sans);font-variant-numeric:tabular-nums}
 
 .opt{font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:.13em;
   text-transform:uppercase;color:var(--ink-3);background:var(--p-lilac);
@@ -447,13 +450,75 @@ table.tk td.num{text-align:right;font-family:ui-monospace,Menlo,monospace}
 @keyframes unfold{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.rwhy{animation:none}}
 
-/* Instrument Serif runs small and light; nudge the display sizes up. */
-.brand h1{font-size:52px}
-.card h2{font-size:28px;letter-spacing:-.4px}
-.gauge-head h3,.ohead h3,h3.sec{font-size:23px;letter-spacing:-.3px}
-.mk.indoor .flag .v{font-size:50px;letter-spacing:-1.6px}
-.metrics .v{font-size:26px}
-.suggest h4{font-size:21px}
-.alert h4{font-size:17.5px}
-.empty{font-size:22px}
-.blocked h3{font-size:23px}
+
+
+
+
+
+
+
+
+
+
+
+/* ---- display scale, one family ---- */
+.brand h1{font-size:40px;font-weight:800;letter-spacing:-1.7px}
+.card h2{font-size:21px;font-weight:700;letter-spacing:-.6px}
+.gauge-head h3,.ohead h3,h3.sec{font-size:17px;font-weight:700;letter-spacing:-.4px}
+.mk .flag .v{font-weight:700}
+.mk.indoor .flag .v{font-size:40px;letter-spacing:-2.2px}
+.mk.outdoor .flag .v{font-size:19px;letter-spacing:-.8px;font-weight:600}
+.metrics .v{font-size:20px;font-weight:700;letter-spacing:-.6px}
+.orh{font-size:15px;font-weight:700;letter-spacing:-.4px}
+.daysplit .deg{font-size:17px;font-weight:700;letter-spacing:-.5px}
+.spendbar .v{font-size:19px;font-weight:700;letter-spacing:-.5px}
+.suggest h4{font-size:16.5px;font-weight:700;letter-spacing:-.3px}
+.alert h4{font-size:14.5px;font-weight:700;letter-spacing:-.2px}
+.blocked h3{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.brief{font-size:17px;font-weight:400;line-height:1.66;letter-spacing:-.1px}
+.empty{font-size:16.5px;font-weight:400;line-height:1.7}
+.tagline2{color:var(--ink-2);margin:11px 0 0;max-width:60ch;font-size:14.5px;line-height:1.6}
+.tagline2 b{color:var(--ink);font-weight:700}
+
+
+/* ---- the week: a day strip with one shared detail panel ---- */
+.odays{display:flex;gap:6px;align-items:stretch;margin-bottom:4px}
+.oday{flex:1;min-width:0;border:1px solid transparent;background:transparent;
+  border-radius:var(--r);padding:11px 3px 9px;cursor:pointer;font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  transition:background .18s,border-color .18s,transform .18s}
+.oday:hover{background:var(--p-lilac);transform:translateY(-1px)}
+.oday:focus-visible{outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.oday.on{background:var(--p-rose);border-color:rgba(176,112,137,.3)}
+.oday .orh{font-size:14.5px;font-weight:700;letter-spacing:-.4px;color:var(--ink)}
+.oday .obar{height:54px;display:flex;align-items:flex-end;justify-content:center;
+  margin:7px 0 8px}
+.oday .obar i{display:block;width:22px;border-radius:5px 5px 0 0;
+  transition:height .6s cubic-bezier(.22,.8,.26,1)}
+.oday .oband{font-size:8px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;max-width:100%}
+.oday .owhen{font-size:11px;color:var(--ink-4);margin-top:4px;font-weight:600}
+.oday.on .owhen{color:var(--accent-2);font-weight:700}
+
+#odetail{margin-top:12px}
+.odetail-inner{background:linear-gradient(150deg,var(--p-lilac),var(--card));
+  border-radius:var(--r);padding:16px 19px;animation:unfold .3s cubic-bezier(.22,.7,.3,1)}
+.odhead{display:flex;justify-content:space-between;align-items:baseline;
+  padding-bottom:10px;margin-bottom:5px;border-bottom:1px solid rgba(0,0,0,.07);gap:12px}
+.odwhen{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.odrh{font-size:13px;font-weight:700;letter-spacing:-.2px}
+.odrow{display:flex;gap:13px;padding:7px 0;font-size:13px;line-height:1.5;
+  align-items:flex-start}
+.odk{flex:none;width:74px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700;padding-top:4px}
+.odv{flex:1;color:var(--ink-2);min-width:0}
+.odv i{font-style:normal;background:var(--p-mint);color:var(--good);border-radius:6px;
+  padding:3px 9px;margin:0 4px 4px 0;display:inline-block;font-size:11.5px;font-weight:600}
+.odv i.no{background:var(--p-peach);color:var(--dry)}
+.odnone{color:var(--ink-4)}
+@media(max-width:640px){
+  .odays{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .oday{min-width:64px}
+}
+@media (prefers-reduced-motion:reduce){.odetail-inner{animation:none}}

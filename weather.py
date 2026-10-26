@@ -109,7 +109,7 @@ def fetch(city: str) -> dict:
             "daily": "temperature_2m_max,temperature_2m_min,dew_point_2m_mean,"
                      "uv_index_max,precipitation_sum,wind_speed_10m_max",
             "timezone": "auto",
-            "forecast_days": 4,
+            "forecast_days": 7,
         })
         cur = fc["current"]
         daily = fc["daily"]

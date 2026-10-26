@@ -381,17 +381,19 @@ niacinamide 10%, retinol 0.5% serum, ceramide moisturizer, SPF 50</code>; wardro
 Note step 5: the model filed sunscreen under "skip" and the invariant check corrected it.</p>
 
 <div class=shot><img src="{embed('01-plan.jpg')}" alt="DewPoint showing the humidity gauge for Seoul"></div>
-<p class=cap>Figure 2b. A live run on Open-Meteo data for Seoul. Both readings sit on one
-scale so the collapse is visible rather than inferred: 67% outdoors, 49.6% on the skin,
-17.4 points lost to heating. The panel above the gauge names the mechanism — heating here,
+<p class=cap>Figure 2b. A live run on Open-Meteo data for New Haven. Both readings sit on
+one scale so the collapse is visible rather than inferred: 61% outdoors, 29.1% on the skin,
+31.9 points lost to heating. The panel above the gauge names the mechanism — heating here,
 air conditioning in a hot climate.</p>
 
 <div class=shot><img src="{embed('02-outlook.jpg')}" alt="The four-day outlook with a drying warning"></div>
-<p class=cap>Figure 2c. The outlook, and the reason it exists. Seoul is comfortable today at
-51.3% and falls to 17.0% within two days — comfortable to severe. The brief responds with
-<i>"Start tonight: in two days, indoor humidity falls from 51.3% to 17.0%, and barrier takes
-time to build."</i> No weather app would surface this, because the figure it reports never
-moves into that range.</p>
+<p class=cap>Figure 2c. A week of indoor conditions, with Thursday selected. Each day
+carries its own dryness band, the products to favour and avoid, layer counts and fabrics
+for morning and afternoon, and any skin-to-clothing conflict. None of the forecast days
+costs a model call — the rules derive all of it, which is the same separation described
+above. Seven extra calls per run would roughly octuple the cost for advice the engine
+already knows how to produce. Below, the warning that makes the week worth showing:
+barrier care needs a day or two of lead time, so it has to arrive before the change does.</p>
 
 <div class=shot><img src="{embed('04-rows.jpg')}" alt="Shelf and outfit lists with two rows expanded"></div>
 <p class=cap>Figure 2d. Progressive disclosure. Each row shows only the product or garment
